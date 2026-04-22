@@ -4,9 +4,10 @@ function Sidebar() {
     return (
         <section className="sidebar">
             {/* new caht button */}
-            <button>
-                <img src="src/assets/blacklogo.png" alt="gpt log"></img>
-                <i className="fa-solid fa-pen-to-square"></i>            </button>
+            <button className="button">
+                <img src="src/assets/blacklogo.png" alt="gpt log" className="logo"></img>
+                <span><i className="fa-solid fa-pen-to-square"></i></span>
+            </button>
             {/* history */}
 
             <ul className="history">
@@ -18,7 +19,7 @@ function Sidebar() {
 
             {/* sign */}
             <div className="sign">
-                <p> By me &hearts; </p>
+                <p> By Me &hearts; </p>
             </div>
         </section>
     )
