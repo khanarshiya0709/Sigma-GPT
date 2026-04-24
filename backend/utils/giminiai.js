@@ -12,9 +12,7 @@ const getGeminiAPIResponse = async (message) => {
                 body: JSON.stringify({
                     contents: [
                         {
-                            parts: [
-                                { text: message }
-                            ]
+                            parts: [{ text: message }]
                         }
                     ]
                 })
@@ -22,12 +20,29 @@ const getGeminiAPIResponse = async (message) => {
         );
 
         const data = await response.json();
-        return data.candidates[0].content.parts[0].text;
+        console.log("API RESPONSE:", data);
+
+        // ❌ API error handle
+        if (data.error) {
+            console.log("Gemini API Error:", data.error.message);
+            return "⚠️ API limit reached, try again later";
+        }
+
+        // ❌ Safe access (no crash)
+        const text =
+            data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!text) {
+            console.log("Invalid structure:", data);
+            return "⚠️ No response from AI";
+        }
+
+        return text;
 
     } catch (err) {
-        console.log(err);
-        throw err;
+        console.log("SERVER ERROR:", err);
+        return "⚠️ Something went wrong on server";
     }
-}
+};
 
 export default getGeminiAPIResponse;
