@@ -1,15 +1,16 @@
 import express from "express";
 import Thread from "../models/Thread.js";
 import getGeminiAPIResponse from "../utils/giminiai.js";
+import { v4 as uuidv4 } from "uuid"; // 🔥 ADD THIS
 
 const router = express.Router();
 
-// ✅ Test route
+// ✅ Test route (fixed - no hardcoded id)
 router.post("/test", async (req, res) => {
     try {
         const thread = new Thread({
-            threadId: "you",
-            title: "sale"
+            threadId: uuidv4(),   // 🔥 FIXED
+            title: "test"
         });
 
         const response = await thread.save();
@@ -72,12 +73,17 @@ router.delete("/thread/:threadId", async (req, res) => {
     }
 });
 
-// ✅ Chat route
+// ✅ Chat route (FIXED 🔥)
 router.post("/chat", async (req, res) => {
-    const { threadId, message } = req.body;
+    let { threadId, message } = req.body;
 
-    if (!threadId || !message) {
-        return res.status(400).json({ error: "missing required fields" });
+    if (!message) {
+        return res.status(400).json({ error: "missing message" });
+    }
+
+    // 🔥 IMPORTANT FIX
+    if (!threadId) {
+        threadId = uuidv4();  // auto-generate id
     }
 
     try {
@@ -104,7 +110,7 @@ router.post("/chat", async (req, res) => {
 
         await thread.save();
 
-        res.json({ reply: assistantReply });
+        res.json({ reply: assistantReply, threadId }); // 🔥 send back id
 
     } catch (err) {
         console.log(err);

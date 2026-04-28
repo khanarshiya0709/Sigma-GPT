@@ -30,12 +30,9 @@ const getGeminiAPIResponse = async (message) => {
 
         // ❌ Safe access (no crash)
         const text =
-            data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            data?.candidates?.[0]?.content?.parts?.[0]?.text ?? "no response";
 
-        if (!text) {
-            console.log("Invalid structure:", data);
-            return "⚠️ No response from AI";
-        }
+
 
         return text;
 
