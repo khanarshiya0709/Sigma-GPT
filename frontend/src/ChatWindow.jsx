@@ -8,6 +8,7 @@ import { SyncLoader } from "react-spinners";
 function ChatWindow() {
     const { prompt, setPrompt, reply, setReply, currThreadId, prevChats, setPrevChats, setCurrThreadId, setNewChat } = useContext(MyContext);
     const [loading, setLoading] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
     const getReply = async () => {
         setLoading(true);
@@ -57,15 +58,34 @@ function ChatWindow() {
         setPrompt("");
 
     }, [reply]);
+
+    const handleProfileClick = () => {
+        setIsOpen(!isOpen);
+    }
+
+
     return (
         <div className="ChatWindow">
             <div className="navbar">
                 <span>SigmaGPT <i className="fa-solid fa-angle-down"></i></span>
-                <div className="userIconDiv">
+                <div className="userIconDiv" onClick={handleProfileClick}>
                     <span className="userIcon"><i className="fa-solid fa-user"></i></span>
                 </div>
 
             </div>
+            {
+                isOpen &&
+                <div className="dropDown">
+                    <div className="dropDownItem"><i className="fa-solid fa-arrow-up-right-dots"></i>Upgrade plan</div>
+                    <div className="dropDownItem"><i className="fa-solid fa-gear"></i>Settings</div>
+                    <div className="dropDownItem"><i className="fa-solid fa-circle-question"></i>Help</div>
+                    <div className="dropDownItem"><i className="fa-solid fa-arrow-right-from-bracket"></i>Log out</div>
+
+
+
+
+                </div>
+            }
 
             <Chat></Chat>
             <SyncLoader color="#fff" loading={loading}>
