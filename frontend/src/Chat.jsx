@@ -49,8 +49,24 @@ function Chat() {
                         <div className={chat.role === "user" ? "userDiv" : "gptDiv"} key={idx}>
                             {
                                 chat.role === "user" ?
-                                    <p className="userMessage">{chat.content}</p> :
-                                    <ReactMarkdown rehypePlugins={rehypeHighlight}>{chat.content}</ReactMarkdown>
+                                    <>
+                                        <p className="userMessage">{chat.content}</p>
+                                        <div className="actions">
+                                            <i className="fa-regular fa-copy"></i>
+                                            <i className="fa-solid fa-pen-to-square"></i>
+
+                                        </div>
+
+                                    </> :
+                                    <>
+                                        <ReactMarkdown rehypePlugins={rehypeHighlight}>{chat.content}</ReactMarkdown>
+                                        <div className="gptActions">
+                                            <i className="fa-regular fa-copy"></i>
+                                            <i class="fa-solid fa-volume-high"></i>
+
+                                        </div>
+
+                                    </>
                             }
 
                         </div>
@@ -62,12 +78,34 @@ function Chat() {
                         <>
                             {
                                 latestReply === null ? (
-                                    <div className="gptDiv" key={"non-typing"}>
-                                        <ReactMarkdown rehypePlugins={rehypeHighlight}>{prevChats[prevChats.length - 1].content}</ReactMarkdown>
-                                    </div>
-                                ) : <div className="gptDiv" key={"typing"}>
-                                    <ReactMarkdown rehypePlugins={rehypeHighlight}>{latestReply}</ReactMarkdown>
-                                </div>
+                                    <>
+                                        <div className="gptDiv">
+                                            <ReactMarkdown rehypePlugins={rehypeHighlight}>
+                                                {prevChats[prevChats.length - 1].content}
+                                            </ReactMarkdown>
+                                        </div>
+
+                                        <div className="gptActions">
+                                            <i className="fa-regular fa-copy"></i>
+                                            <i className="fa-solid fa-volume-high"></i>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className="gptDiv">
+                                            <ReactMarkdown rehypePlugins={rehypeHighlight}>
+                                                {latestReply}
+                                            </ReactMarkdown>
+                                        </div>
+                                        <div className="gptActions">
+                                            <i className="fa-regular fa-copy"></i>
+                                            <i className="fa-solid fa-volume-high"></i>
+                                        </div>
+
+
+                                    </>
+
+                                )
                             }
                         </>
                     )

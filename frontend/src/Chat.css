@@ -10,13 +10,18 @@
 
 .userDiv {
     display: flex;
+    flex-direction: column;
     justify-content: flex-end;
     font-size: 0.9rem;
+    align-items: flex-end;
 }
 
 .gptDiv {
     text-align: left;
     font-size: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
 .userMessage {
@@ -31,4 +36,46 @@
 
 .hljs {
     border-radius: 14px;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+
+}
+
+.actions i {
+    padding: 6px;
+    /* 🔥 ye important */
+    border-radius: 50%;
+    display: inline-flex;
+    /* better control */
+    align-items: center;
+    justify-content: center;
+}
+
+.actions i:hover {
+    cursor: pointer;
+    background-color: #323232;
+}
+
+/* .actions .fa-regular:hover {
+    cursor: pointer;
+    background-color: #323232;
+    border-radius: 50%;
+} */
+
+.gptActions {
+    display: flex;
+    gap: 10px;
+    align-self: flex-start;
+
+}
+
+.gptActions .fa-regular:hover {
+    cursor: pointer;
+    background-color: #323232;
+    border-radius: 20px;
+
 }
