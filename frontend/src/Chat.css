@@ -31,6 +31,9 @@
     margin-left: 15rem;
     max-width: 500px;
     width: fit-content;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 
 }
 
@@ -53,18 +56,12 @@
     /* better control */
     align-items: center;
     justify-content: center;
+    cursor: pointer;
 }
 
 .actions i:hover {
-    cursor: pointer;
     background-color: #323232;
 }
-
-/* .actions .fa-regular:hover {
-    cursor: pointer;
-    background-color: #323232;
-    border-radius: 50%;
-} */
 
 .gptActions {
     display: flex;
@@ -73,9 +70,66 @@
 
 }
 
-.gptActions .fa-regular:hover {
+.gptActions i {
     cursor: pointer;
-    background-color: #323232;
-    border-radius: 20px;
+    padding: 6px;
+    border-radius: 50%;
 
+
+}
+
+.gptActions i:hover {
+    background-color: #323232;
+}
+
+.editBox textarea {
+    width: 100%;
+    height: 60px;
+    /* fixed height */
+    resize: none;
+    /* user resize na kare */
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    outline: none;
+    background-color: #323232;
+    color: white;
+
+    white-space: pre-wrap;
+    /* text wrap kare */
+    word-wrap: break-word;
+    /* long text bhi break ho */
+}
+
+.editActions {
+    margin-top: 5px;
+    display: flex;
+    gap: 8px;
+}
+
+.editActions button {
+    padding: 4px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.editActions button:first-child {
+    background: black;
+    color: white;
+}
+
+.editActions button:last-child {
+    background: white;
+    color: black;
+}
+
+.editActions button:last-child:hover {
+    border: 1px solid #888;
+    background-color: #3a3a3a;
+    transform: scale(1.03);
+}
+
+.editActions button:first-child:hover {
+    transform: scale(1.05) translateY(0px);
 }
