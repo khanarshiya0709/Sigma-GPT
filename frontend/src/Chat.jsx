@@ -12,6 +12,10 @@ function Chat() {
     const [copiedIndex, setCopiedIndex] = useState(null);
     const [editIndex, setEditIndex] = useState(null);
     const [editText, setEditText] = useState("");
+    const [currentSpeech, setCurrentSpeech] = useState("");
+    const [speechBar, setSpeechBar] = useState(false);
+    const [currentTimeBar, setCurrentTimeBar] = useState(0);
+    const [totalTime, setTotalTime] = useState(0);
 
     const chatEndRef = useRef(null);
 
@@ -56,13 +60,58 @@ function Chat() {
     const speakMessage = (text) => {
         if (!text) return;
 
+
+        window.speechSynthesis.cancel();
+
+        setCurrentSpeech(text);
+        setSpeechBar(true);
+
+        const estimatedTime = Math.ceil(text.split(" ").length / 2);
+
+        setTotalTime(estimatedTime);
+        setCurrentTimeBar(0);
+
+        let time = 0;
+
+        const timer = setInterval(() => {
+            time++;
+            setCurrentTimeBar(time);
+
+            if (time >= estimatedTime) {
+                clearInterval(timer);
+            }
+        }, 1000);
+
+
         const speech = new SpeechSynthesisUtterance(text);
         speech.lang = "en-US";
         speech.rate = 1;
         speech.pitch = 1;
 
+        speech.onend = () => {
+            clearInterval(timer);
+            setSpeechBar(false);
+        }
+
         window.speechSynthesis.speak(speech);
     };
+
+    const stopSpeech = () => {
+        window.speechSynthesis.cancel();
+        setSpeechBar(false);
+    }
+
+    const formatTime = (time) => {
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+
+        return `${minutes}:${String(seconds).padStart(2, "0")}`;
+    }
+
+    const progress = totalTime > 0
+        ? (currentTimeBar / totalTime) * 100
+        : 0;
+
 
     // 🔹 Save edit
     const handleSave = (idx) => {
@@ -85,6 +134,37 @@ function Chat() {
             {newChat && <h1>Start a New Chat</h1>}
 
             <div className="chats">
+
+                {
+                    speechBar && (
+                        <div className="speechBar">
+                            <div className="barplayer">
+                                <i className="fa-solid fa-volume-high"></i>
+                                <span>
+                                    {formatTime(currentTimeBar)}
+                                </span>
+                            </div>
+
+                            <div className="progressContainer">
+                                <div
+                                    className="progressFill"
+                                    style={{ width: `${progress}%` }}
+                                ></div>
+
+
+                            </div>
+                            <i
+                                className="fa-solid fa-xmark closeIcon"
+                                onClick={stopSpeech}
+                            ></i>
+
+
+
+
+
+                        </div>
+                    )
+                }
 
                 {/* 🔹 Old chats */}
                 {
