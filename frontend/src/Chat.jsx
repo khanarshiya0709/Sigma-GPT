@@ -16,8 +16,11 @@ function Chat() {
     const [speechBar, setSpeechBar] = useState(false);
     const [currentTimeBar, setCurrentTimeBar] = useState(0);
     const [totalTime, setTotalTime] = useState(0);
+    const [isPaused, setIsPaused] = useState(false);
+    const [barKey, setBarKey] = useState(0);
 
     const chatEndRef = useRef(null);
+    const timerRef = useRef(null);
 
     // 🔹 Typing effect
     useEffect(() => {
@@ -61,7 +64,10 @@ function Chat() {
         if (!text) return;
 
 
+        setIsPaused(false);
+
         window.speechSynthesis.cancel();
+        clearInterval(timerRef.current);
 
         setCurrentSpeech(text);
         setSpeechBar(true);
@@ -71,16 +77,20 @@ function Chat() {
         setTotalTime(estimatedTime);
         setCurrentTimeBar(0);
 
+        setBarKey((prev) => prev + 1);
+
         let time = 0;
 
-        const timer = setInterval(() => {
+        timerRef.current = setInterval(() => {
             time++;
             setCurrentTimeBar(time);
 
             if (time >= estimatedTime) {
-                clearInterval(timer);
+                clearInterval(timerRef.current);
             }
         }, 1000);
+
+        setIsPaused(false);
 
 
         const speech = new SpeechSynthesisUtterance(text);
@@ -89,7 +99,7 @@ function Chat() {
         speech.pitch = 1;
 
         speech.onend = () => {
-            clearInterval(timer);
+            clearInterval(timerRef.current);
             setSpeechBar(false);
         }
 
@@ -100,6 +110,32 @@ function Chat() {
         window.speechSynthesis.cancel();
         setSpeechBar(false);
     }
+
+    const togglePauseResume = () => {
+        if (isPaused) {
+            window.speechSynthesis.resume();
+            timerRef.current = setInterval(() => {
+
+                setCurrentTimeBar((prev) => {
+
+                    if (prev >= totalTime) {
+                        clearInterval(timerRef.current);
+                        return prev;
+                    }
+
+                    return prev + 1;
+                });
+
+            }, 1000);
+
+            setIsPaused(false);
+
+        } else {
+            window.speechSynthesis.pause();
+            clearInterval(timerRef.current);
+            setIsPaused(true);
+        }
+    };
 
     const formatTime = (time) => {
         const minutes = Math.floor(time / 60);
@@ -139,7 +175,15 @@ function Chat() {
                     speechBar && (
                         <div className="speechBar">
                             <div className="barplayer">
-                                <i className="fa-solid fa-volume-high"></i>
+                                <i
+                                    className={
+                                        isPaused
+                                            ? "fa-solid fa-play"
+                                            : "fa-solid fa-volume-high"
+                                    }
+                                    onClick={togglePauseResume}
+
+                                ></i>
                                 <span>
                                     {formatTime(currentTimeBar)}
                                 </span>
@@ -147,6 +191,7 @@ function Chat() {
 
                             <div className="progressContainer">
                                 <div
+                                    key={barKey}
                                     className="progressFill"
                                     style={{ width: `${progress}%` }}
                                 ></div>
