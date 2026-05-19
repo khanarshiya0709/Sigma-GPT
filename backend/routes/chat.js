@@ -5,6 +5,9 @@ import { v4 as uuidv4 } from "uuid"; // 🔥 ADD THIS
 
 const router = express.Router();
 
+
+
+
 // ✅ Test route (fixed - no hardcoded id)
 router.post("/test", async (req, res) => {
     try {
@@ -79,6 +82,13 @@ router.post("/chat", async (req, res) => {
 
     if (!message) {
         return res.status(400).json({ error: "missing message" });
+    }
+
+    if (message.length > 2000) {
+        return res.status(400).json({
+            error: "Character limit exceeded"
+        });
+
     }
 
     // 🔥 IMPORTANT FIX

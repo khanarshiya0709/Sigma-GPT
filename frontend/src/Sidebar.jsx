@@ -10,6 +10,8 @@ function Sidebar() {
     const [renameThreadId, setRenameThreadId] = useState(null);
     const [renameText, setRenameText] = useState(" ");
 
+
+
     const getAllThreads = async () => {
         try {
             const response = await fetch("http://localhost:8080/api/thread");
@@ -119,6 +121,34 @@ function Sidebar() {
         setRenameText("");
     };
 
+    const handlePin = (threadId) => {
+        setAllThreads((prev) => {
+            const updatedThreads = prev.map((thread) => {
+
+                if (thread.threadId === threadId) {
+                    return {
+                        ...thread,
+                        isPinned: !thread.isPinned
+                    }
+
+                }
+                return thread;
+
+            });
+
+            const pinnedThread = updatedThreads.find(
+                (thread) => thread.threadId === threadId
+            );
+
+            const otherThreads = updatedThreads.filter(
+                (thread) => thread.threadId !== threadId
+            );
+            return [pinnedThread, ...otherThreads];
+
+
+        });
+    }
+
     return (
         <section className="sidebar">
 
@@ -177,7 +207,11 @@ function Sidebar() {
 
                                 ) : (
 
-                                    thread.title
+                                    <>
+                                        {thread.title}
+
+                                        {thread.isPinned && "📌"}
+                                    </>
                                 )
                             }
 
@@ -245,6 +279,24 @@ function Sidebar() {
                                                 <i className="fa-solid fa-trash"></i>
 
                                                 Delete
+                                            </button>
+
+                                            <button className="pinBtn"
+
+                                                onClick={(e) => {
+
+                                                    e.stopPropagation();
+                                                    handlePin(thread.threadId);
+
+                                                    setOpenMenu(null);
+
+
+
+                                                }
+                                                }
+                                            >
+                                                <i class="fa-solid fa-thumbtack"></i>
+                                                Pin
                                             </button>
 
                                         </div>

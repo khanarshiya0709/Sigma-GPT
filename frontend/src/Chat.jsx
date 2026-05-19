@@ -22,6 +22,7 @@ function Chat() {
     const chatEndRef = useRef(null);
     const timerRef = useRef(null);
 
+
     // 🔹 Typing effect
     useEffect(() => {
         if (reply === null) {
@@ -227,6 +228,8 @@ function Chat() {
                                                 <textarea
                                                     value={editText}
                                                     onChange={(e) => setEditText(e.target.value)}
+                                                    maxLength={2000}
+
                                                 />
 
                                                 <div className="editActions">

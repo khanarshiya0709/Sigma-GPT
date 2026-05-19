@@ -99,6 +99,7 @@ function ChatWindow() {
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' ? getReply() : ''}
+                        maxLength={9}
 
                     ></input>
 
