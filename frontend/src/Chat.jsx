@@ -168,7 +168,10 @@ function Chat() {
 
     return (
         <>
-            {newChat && <h1>Start a New Chat</h1>}
+            {
+                (newChat && prevChats.length === 0)
+                && <h1>Start a New Chat</h1>
+            }
 
             <div className="chats">
 

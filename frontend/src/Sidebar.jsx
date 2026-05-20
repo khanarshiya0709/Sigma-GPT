@@ -16,7 +16,9 @@ function Sidebar() {
         try {
             const response = await fetch("http://localhost:8080/api/thread");
             const res = await response.json();
-            const filterData = res.map(thread => ({ threadId: thread.threadId, title: thread.title }));
+            const filterData = res.map(thread => ({ threadId: thread.threadId, title: thread.title, isPinned: thread.isPinned }));
+            filterData.sort((a, b) => b.isPinned - a.isPinned);
+
             console.log(filterData);
             setAllThreads(filterData);
 
@@ -89,11 +91,24 @@ function Sidebar() {
         }
     }
 
-    const handleRename = (threadId) => {
+    const handleRename = async (threadId) => {
+        if (!renameText.trim()) return;
+        await fetch(
+            `http://localhost:8080/api/thread/${threadId}`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    title: renameText
+                })
+            }
+        );
 
         setAllThreads((prev) => {
 
-            const updatedThreads = prev.map((thread) =>
+            return prev.map((thread) =>
 
                 thread.threadId === threadId
 
@@ -105,15 +120,7 @@ function Sidebar() {
                     : thread
             );
 
-            const renamedThread = updatedThreads.find(
-                (thread) => thread.threadId === threadId
-            );
 
-            const otherThreads = updatedThreads.filter(
-                (thread) => thread.threadId !== threadId
-            );
-
-            return [renamedThread, ...otherThreads];
         });
 
         setRenameThreadId(null);
@@ -121,7 +128,25 @@ function Sidebar() {
         setRenameText("");
     };
 
-    const handlePin = (threadId) => {
+    const handlePin = async (threadId) => {
+        const clickedThread = allThreads.find(
+            (thread) => thread.threadId === threadId
+        );
+
+        const updatedPinnedState = !clickedThread.isPinned;
+
+        await fetch(
+            `http://localhost:8080/api/thread/${threadId}`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    isPinned: updatedPinnedState
+                })
+            }
+        );
         setAllThreads((prev) => {
             const updatedThreads = prev.map((thread) => {
 
@@ -136,14 +161,14 @@ function Sidebar() {
 
             });
 
-            const pinnedThread = updatedThreads.find(
-                (thread) => thread.threadId === threadId
+            const pinnedThread = updatedThreads.filter(
+                (thread) => thread.isPinned
             );
 
-            const otherThreads = updatedThreads.filter(
-                (thread) => thread.threadId !== threadId
+            const unPinnedThreads = updatedThreads.filter(
+                (thread) => !thread.isPinned
             );
-            return [pinnedThread, ...otherThreads];
+            return [...pinnedThread, ...unPinnedThreads];
 
 
         });
@@ -210,7 +235,7 @@ function Sidebar() {
                                     <>
                                         {thread.title}
 
-                                        {thread.isPinned && "📌"}
+                                        {thread.isPinned && <i className="fa-solid fa-thumbtack"></i>}
                                     </>
                                 )
                             }
@@ -286,17 +311,32 @@ function Sidebar() {
                                                 onClick={(e) => {
 
                                                     e.stopPropagation();
+
                                                     handlePin(thread.threadId);
 
                                                     setOpenMenu(null);
 
-
-
-                                                }
-                                                }
+                                                }}
                                             >
-                                                <i class="fa-solid fa-thumbtack"></i>
-                                                Pin
+
+                                                <i
+                                                    className={
+                                                        thread.isPinned
+
+                                                            ? "fa-solid fa-thumbtack-slash"
+
+                                                            : "fa-solid fa-thumbtack"
+                                                    }
+                                                ></i>
+
+                                                {
+                                                    thread.isPinned
+
+                                                        ? "Unpin chat"
+
+                                                        : "Pin"
+                                                }
+
                                             </button>
 
                                         </div>

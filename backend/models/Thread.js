@@ -34,6 +34,11 @@ const ThreadSchema = new mongoose.Schema({
     updatedAt: {
         type: Date,
         default: Date.now
+    },
+
+    isPinned: {
+        type: Boolean,
+        default: false
     }
 });
 

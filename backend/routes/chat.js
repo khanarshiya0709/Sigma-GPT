@@ -76,6 +76,30 @@ router.delete("/thread/:threadId", async (req, res) => {
     }
 });
 
+//update
+router.patch("/thread/:threadId", async (req, res) => {
+
+    const { threadId } = req.params;
+
+    try {
+        const updatedThread =
+            await Thread.findOneAndUpdate(
+                { threadId },
+                req.body,
+
+                { new: true }
+            );
+        res.json(updatedThread);
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({
+            error: "failed to updae thread"
+        });
+
+    }
+});
+
 // ✅ Chat route (FIXED 🔥)
 router.post("/chat", async (req, res) => {
     let { threadId, message } = req.body;
