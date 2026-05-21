@@ -6,9 +6,11 @@ import { v4 as uuidv4 } from "uuid";
 function Sidebar() {
     const { allThreads, setAllThreads, currThreadId, setReply, setPrompt, setNewChat, setCurrThreadId, setPrevChats } = useContext(MyContext);
     const [openMenu, setOpenMenu] = useState(null);
+    const [menuPosition, setMenuPosition] = useState("bottom");
     const [deleteThreadId, setDeleteThreadId] = useState(null);
     const [renameThreadId, setRenameThreadId] = useState(null);
     const [renameText, setRenameText] = useState(" ");
+
 
 
 
@@ -251,6 +253,18 @@ function Sidebar() {
                                     onClick={(e) => {
 
                                         e.stopPropagation();
+                                        const rect =
+                                            e.currentTarget.getBoundingClientRect();
+
+                                        if (rect.top > window.innerHeight / 2) {
+
+                                            setMenuPosition("top");
+
+                                        } else {
+
+                                            setMenuPosition("bottom");
+
+                                        }
 
                                         setOpenMenu(
                                             openMenu === thread.threadId
@@ -264,10 +278,13 @@ function Sidebar() {
                                     openMenu === thread.threadId && (
 
                                         <div
-                                            className="threadMenu"
+                                            className={`threadMenu ${menuPosition}`}
+                                            onClick={(e) => {
 
-                                            onClick={(e) =>
-                                                e.stopPropagation()
+                                                e.stopPropagation();
+
+
+                                            }
                                             }
                                         >
 
