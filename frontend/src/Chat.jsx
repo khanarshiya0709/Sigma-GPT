@@ -245,8 +245,25 @@ function Chat() {
                                                 </div>
                                             </div>
                                         ) : (
-                                            <p className="userMessage">{chat.content}</p>
-                                        )
+                                            <>
+                                                {
+                                                    chat.attachment && (
+                                                        <div className="chatFilePreview">
+
+                                                            <i className="fa-solid fa-file-pdf"></i>
+
+                                                            <div className="chatFileName">
+                                                                {chat.attachment.fileName}
+                                                            </div>
+
+                                                        </div>
+                                                    )
+                                                }
+
+                                                <p className="userMessage">
+                                                    {chat.content}
+                                                </p>
+                                            </>)
                                     }
 
                                     {/* 🔹 Actions */}

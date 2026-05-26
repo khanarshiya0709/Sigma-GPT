@@ -2,6 +2,7 @@ import express from "express";
 import Thread from "../models/Thread.js";
 import getGeminiAPIResponse from "../utils/giminiai.js";
 import { v4 as uuidv4 } from "uuid"; // 🔥 ADD THIS
+import upload from "../middleware/upload.js";
 
 const router = express.Router();
 
@@ -101,8 +102,10 @@ router.patch("/thread/:threadId", async (req, res) => {
 });
 
 // ✅ Chat route (FIXED 🔥)
-router.post("/chat", async (req, res) => {
+router.post("/chat", upload.single("file"), async (req, res) => {
     let { threadId, message } = req.body;
+    console.log(req.body);
+    console.log(req.file);
 
     if (!message) {
         return res.status(400).json({ error: "missing message" });
@@ -127,10 +130,26 @@ router.post("/chat", async (req, res) => {
             thread = new Thread({
                 threadId,
                 title: message,
-                messages: [{ role: "user", content: message }]
+                messages: [{
+                    role: "user",
+                    content: message,
+                    attachment: req.file ? {
+                        type: req.file.mimetype,
+                        fileName: req.file.originalname,
+                        filePath: req.file.path
+                    } : null
+                }]
             });
         } else {
-            thread.messages.push({ role: "user", content: message });
+            thread.messages.push({
+                role: "user",
+                content: message,
+                attachment: req.file ? {
+                    type: req.file.mimetype,
+                    fileName: req.file.originalname,
+                    filePath: req.file.path
+                } : null
+            });
         }
 
         const assistantReply = await getGeminiAPIResponse(message);

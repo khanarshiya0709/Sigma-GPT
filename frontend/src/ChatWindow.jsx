@@ -1,30 +1,43 @@
 import "./ChatWindow.css";
 import Chat from "./Chat.jsx";
 import { MyContext } from './MyContext';
-import { useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect, useRef } from "react";
 import { SyncLoader } from "react-spinners";
+// useRed= hidden input ko access karega
 
 
 function ChatWindow() {
     const { prompt, setPrompt, reply, setReply, currThreadId, prevChats, setPrevChats, setCurrThreadId, setNewChat } = useContext(MyContext);
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
+    const [showUploadMenu, setShowUploadMenu] = useState(false);
+    const fileInputRef = useRef(null);
+    const [selectedFile, setSelectedFile] = useState(null);
 
     const getReply = async () => {
         setLoading(true);
         setNewChat(false);
 
 
+        const formData = new FormData();
+        formData.append("message", prompt);
+        formData.append("threadId", currThreadId);
+        if (selectedFile) {
+            formData.append("file", selectedFile);
+        }
+
+
         const options = {
 
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: prompt,
-                threadId: currThreadId
-            })
+            // headers: {
+            //     "Content-Type": "application/json"
+            // },
+            // body: JSON.stringify({
+            //     message: prompt,
+            //     threadId: currThreadId
+            // })
+            body: formData
         };
         try {
             const response = await fetch("http://localhost:8080/api/chat", options);
@@ -47,7 +60,14 @@ function ChatWindow() {
                 ...prevChats,
                 {
                     role: "user",
-                    content: prompt
+                    content: prompt,
+                    attachment: selectedFile ? {
+
+                        fileName: selectedFile.name,
+
+                        type: selectedFile.type
+
+                    } : null
                 },
                 {
                     role: "assistant",
@@ -56,6 +76,7 @@ function ChatWindow() {
             ]);
         }
         setPrompt("");
+        setSelectedFile(null);
 
     }, [reply]);
 
@@ -94,6 +115,84 @@ function ChatWindow() {
 
             <div className="chatInput">
                 <div className="inputBox">
+                    <div id="plusBtn" onClick={() => {
+                        setShowUploadMenu(!showUploadMenu);
+                    }}>
+                        <i className="fa-solid fa-plus"></i>
+                    </div>
+
+                    {
+                        selectedFile ? (
+
+                            <div className="fileContainer">
+
+                                <div className="filePreview">
+
+                                    <i className="fa-solid fa-file"></i>
+
+                                    <span className="fileName">
+                                        {selectedFile.name}
+                                    </span>
+
+                                </div>
+
+                                <i
+                                    className="fa-solid fa-xmark removeFile"
+
+                                    onClick={() => {
+                                        setSelectedFile(null);
+                                    }}
+                                ></i>
+
+                            </div>
+
+
+                        ) : (
+
+                            showUploadMenu && (
+
+                                <div className="uploadMenu">
+
+                                    <button>
+                                        <i className="fa-solid fa-images"></i>
+
+                                        Choose Image
+                                    </button>
+
+                                    <button
+                                        onClick={() => {
+
+                                            fileInputRef.current.click();
+                                        }}
+                                    >
+                                        <i className="fa-solid fa-file-arrow-up"></i>
+
+                                        Upload File
+
+                                        <input
+                                            type="file"
+
+                                            ref={fileInputRef}
+
+                                            style={{ display: "none" }}
+
+                                            onChange={(e) => {
+
+                                                const file =
+                                                    e.target.files[0];
+
+                                                setSelectedFile(file);
+
+                                                setShowUploadMenu(false);
+                                            }}
+                                        />
+                                    </button>
+
+                                </div>
+                            )
+                        )
+                    }
+
                     <input placeholder="Ask Anything"
 
                         value={prompt}

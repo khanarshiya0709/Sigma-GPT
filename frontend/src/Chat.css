@@ -200,3 +200,37 @@
     width: 0%;
     transition: width 1s linear;
 }
+
+.chatFilePreview {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    max-width: 250px;
+
+    padding: 10px 14px;
+
+    border-radius: 14px;
+
+    background-color: rgba(255, 255, 255, 0.08);
+
+    /* margin-bottom: 1px; */
+}
+
+.chatFilePreview i {
+    font-size: 24px;
+}
+
+.chatFileName {
+    overflow-x: auto;
+
+    white-space: nowrap;
+
+    font-size: 14px;
+
+    flex: 1;
+}
+
+.chatFileName::-webkit-scrollbar {
+    display: none;
+}
