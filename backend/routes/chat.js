@@ -107,7 +107,7 @@ router.post("/chat", upload.single("file"), async (req, res) => {
     console.log(req.body);
     console.log(req.file);
 
-    if (!message) {
+    if (!message?.trim() && !req.file) {
         return res.status(400).json({ error: "missing message" });
     }
 
@@ -152,7 +152,7 @@ router.post("/chat", upload.single("file"), async (req, res) => {
             });
         }
 
-        const assistantReply = await getGeminiAPIResponse(message);
+        const assistantReply = await getGeminiAPIResponse(message, req.file?.path, req.file?.mimetype);
 
         thread.messages.push({
             role: "assistant",

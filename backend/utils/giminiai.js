@@ -1,7 +1,13 @@
 import 'dotenv/config';
+import fs from "fs";
 
-const getGeminiAPIResponse = async (message) => {
+const getGeminiAPIResponse = async (message, filePath, mimeType) => {
     try {
+        let fileData = null;
+        if (filePath) {
+            fileData = fs.readFileSync(filePath)
+                .toString("base64");
+        }
         const response = await fetch(
             `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`,
             {
@@ -12,7 +18,15 @@ const getGeminiAPIResponse = async (message) => {
                 body: JSON.stringify({
                     contents: [
                         {
-                            parts: [{ text: message }]
+                            parts: [{ text: message },
+                            ...(fileData ? [{
+                                inlineData: {
+                                    mimeType: req.file.mimeType,         //"application/pdf", //mimeType means file ka type like now pdf so application,
+                                    data: fileData
+                                }
+                            }] : [])
+
+                            ]
                         }
                     ]
                 })

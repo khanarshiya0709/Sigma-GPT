@@ -259,10 +259,16 @@ function Chat() {
                                                         </div>
                                                     )
                                                 }
+                                                {
+                                                    chat.content && (
+                                                        <p className="userMessage">
+                                                            {chat.content}
+                                                        </p>
+                                                    )
 
-                                                <p className="userMessage">
-                                                    {chat.content}
-                                                </p>
+                                                }
+
+
                                             </>)
                                     }
 
@@ -318,12 +324,20 @@ function Chat() {
                     prevChats.length > 0 && (
                         <>
                             {latestReply === null ? (
-                                <>
-                                    <div className="gptDiv">
-                                        <ReactMarkdown rehypePlugins={rehypeHighlight}>
-                                            {prevChats[prevChats.length - 1].content}
-                                        </ReactMarkdown>
-                                    </div>
+                                <>{
+                                    prevChats[prevChats.length - 1].content && (
+
+
+
+                                        <div className="gptDiv">
+
+                                            <ReactMarkdown rehypePlugins={rehypeHighlight}>
+                                                {prevChats[prevChats.length - 1].content}
+                                            </ReactMarkdown>
+
+                                        </div>
+                                    )
+                                }
 
                                     <div className="gptActions">
                                         <i

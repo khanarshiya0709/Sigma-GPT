@@ -15,6 +15,9 @@ function ChatWindow() {
     const [selectedFile, setSelectedFile] = useState(null);
 
     const getReply = async () => {
+        if (!prompt.trim() && !selectedFile) {
+            return;
+        }
         setLoading(true);
         setNewChat(false);
 
