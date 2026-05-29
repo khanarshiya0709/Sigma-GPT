@@ -1,0 +1,177 @@
+ther two folder backend and fronted
+1) work on backend
+
+(dependencis)
+npm i express nodemon cors
+
+create file server.js
+initaila backend testing.
+
+create acc openai -> read MODEL and tokenize
+
+use openai -> 1) npm 2) axios and fetch and end api 
+
+npm i openai
+
+npm i dotenv
+
+npm install @google/generative-ai
+https://ai.google.dev/gemini-api/docs
+
+npm install -g nodemon
+nodemon server.js
+
+
+bacend
+  ||
+ 1) models -> Thread.js (define schemas)
+  npm i mongoose
+ 
+  i created threadSchema and messageSchema
+  
+ 2) routes (again check that server send data and it store on db);
+
+1) get /thread ( backend se data fronted ke paas jaye ga jo hum ne updatedId use kiya tha matalb jo bhi most recent chat hai who first pe rahe)
+ is me sare data rahenge ( history type) 
+Thread.find({}); is se sare data show hote hai.
+
+2) get /thread/:threadId ( 1 specific chats section click par show hoga)
+
+3) delete /thread/:threadId (delete)
+
+4) post /chat ( message + reply ) pair hai who db me save hoga and fir fronted ko dikhe ga bhi.)
+
+is me do condition hogi first* -> porani hi chat me hum fir se chat karenge ( hum fronted se theardId and message rahega tab hi backend reply kar payega hum ko message store karnge and fir backend gimini ai se response lega fir who message and response store kare ga DB me and hum ko reply dega . 
+second* -> new threadId create hogi and fir same hoga.
+
+
+ 3) utils (store core login in it)
+
+
+ FRONTEND 
+
+createContext = data share karta hai multiple components ke bich me .
+
+ICON (font awesome)
+
+npm i uuid;
+
+{ message: "hello" }   // object
+↓
+JSON.stringify()
+↓
+'{"message":"hello"}'  // string (server ke pass ye jaye ga)
+ 
+JSON = format hai data kis format me rahta hai,
+👉
+stringify = object → string
+👉
+response.json = string → object
+
+JS object
+↓ stringify
+JSON string
+↓ network (HTTP) ye sirf text/string hi samjhta hai nahi to fetch me bole ga ke error (typeError)
+server
+↓ parse
+JS object
+
+
+Header server ko batata hai ki data kis format me aa raha hai ( q ke agar mai ye nahi likhti to who bole ga ke ye plain text hai ya json) req.header = undefined);
+
+(react spinner)
+npm i react-spinner
+
+MyContext = box
+👉
+providerValue = data inside box
+👉
+useContext = data nikalna
+
+
+useEffect kya karta hai?
+
+👉
+kuch kaam automatically run karta hai jab koi value change ho
+
+(package of formatting)
+react-markdown
+rehype-highlight ( for formatting synstax
+
+
+stopPropagation(); // stop event bubbing
+jab hum child par kuch karte hai to who parent par bhi hota hai (obv ek dosre par depent hote hai);
+
+.............I am adding Features ...............
+
+1) auto scroll on new message
+
+useRef(null) → starting me empty box ✔️
+<div ref={chatEndRef}> → React us box me div daal deta ✔️
+chatEndRef.current → wo div mil gaya ✔️
+scrollIntoView() → us div tak scroll ✔️
+
+useRef--> elemt ko padko aur os par kaam karo
+        (kisi element ko direct pakadne ka tareeqa)
+scrollIntoView() --> page who elemt tak scroll kare ga, 
+
+setState() 
+component ko rerender karta hai,
+
+useRef()
+rerender nahi karta hai value save karke rakhta hai,
+
+fetch() 
+request bhejta hia 
+mai kuch send karahi ho frontend se who backend ko dega
+
+get 
+data bhejna
+data lena
+is me data change nahi hota hai 
+
+
+post
+jayse message create udhar se response create 
+new data bhejna /create
+
+Need middleware 😼
+
+Naam:
+
+multer = file upload middleware
+
+😎🔥
+
+Because Express by default:
+
+file upload
+
+samajhta nahi 😭
+
+(node.js)
+fs -> file system
+fs.readFileSync() file ko read karo,
+
+( when hum ko file ko dena rahta hai isley formData ) .formData to hum ko hearders hata denge q ke browser auto matically kar lega.
+
+
+frontend selectedFile 😎 user pdf upload
+↓
+formData 😎 store ui(because JSON file-friendly nahi 😎🔥)
+↓
+multer 😎 not express can do so multer did
+↓
+req.file 😎
+↓
+req.file.path 😎 upload folder me mai address str karongi
+↓
+fs.readFileSync 😎 file ko node.js se read karega 
+↓
+base64 😎 binary to plain text me convert karega, 
+↓
+Gemini 😎🔥
+
+          
+
+

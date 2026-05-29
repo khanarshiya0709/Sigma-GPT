@@ -6,6 +6,10 @@ import mongoose from 'mongoose';
 import chatRoutes from "./routes/chat.js";
 
 const app = express();
+app.use(
+    "/uploads",
+    express.static("uploads")
+);
 const PORT = 8080;
 
 

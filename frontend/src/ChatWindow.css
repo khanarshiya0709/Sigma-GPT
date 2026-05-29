@@ -194,10 +194,6 @@ input:focus {
     background-color: #2a2a2a;
     padding: 14px;
 
-
-
-
-
 }
 
 .filePreview {
@@ -251,4 +247,35 @@ input:focus {
 .removeFile:hover {
 
     background-color: rgba(255, 255, 255, 0.12);
+}
+
+.imageContainer {
+    position: absolute;
+    bottom: 60px;
+    left: 0;
+
+}
+
+.selectedImage {
+    width: 70px;
+    height: 70px;
+    border-radius: 14px;
+    object-fit: cover;
+
+}
+
+.removeImage {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+    padding: 2px;
+
+}
+
+.removeImage:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+
 }

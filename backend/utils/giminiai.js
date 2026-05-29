@@ -21,7 +21,7 @@ const getGeminiAPIResponse = async (message, filePath, mimeType) => {
                             parts: [{ text: message },
                             ...(fileData ? [{
                                 inlineData: {
-                                    mimeType: req.file.mimeType,         //"application/pdf", //mimeType means file ka type like now pdf so application,
+                                    mimeType: mimeType,         //"application/pdf", //mimeType means file ka type like now pdf so application,
                                     data: fileData
                                 }
                             }] : [])

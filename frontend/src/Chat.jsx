@@ -18,6 +18,8 @@ function Chat() {
     const [totalTime, setTotalTime] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
     const [barKey, setBarKey] = useState(0);
+    const [selectedChatImage,
+        setSelectedChatImage] = useState(null);
 
     const chatEndRef = useRef(null);
     const timerRef = useRef(null);
@@ -172,6 +174,25 @@ function Chat() {
                 (newChat && prevChats.length === 0)
                 && <h1>Start a New Chat</h1>
             }
+            {
+                selectedChatImage && (
+
+                    <div
+                        className="imageOverlay"
+
+                        onClick={() =>
+                            setSelectedChatImage(null)
+                        }
+                    >
+
+                        <img
+                            src={selectedChatImage}
+                            className="bigImage"
+                        />
+
+                    </div>
+                )
+            }
 
             <div className="chats">
 
@@ -248,24 +269,42 @@ function Chat() {
                                             <>
                                                 {
                                                     chat.attachment && (
-                                                        <div className="chatFilePreview">
 
-                                                            <i className="fa-solid fa-file-pdf"></i>
+                                                        chat.attachment?.type?.startsWith("image/") ? (
 
-                                                            <div className="chatFileName">
-                                                                {chat.attachment.fileName}
+                                                            <img
+                                                                src={`http://localhost:8080/uploads/${encodeURIComponent(chat.attachment?.filePath)}`} alt="chat-image"
+                                                                className="chatImage"
+                                                                alt="chat-image"
+                                                                onClick={() =>
+                                                                    setSelectedChatImage(
+                                                                        `http://localhost:8080/uploads/${encodeURIComponent(chat.attachment.filePath)}`
+                                                                    )
+                                                                }
+                                                            />
+
+                                                        ) : (
+
+                                                            <div className="chatFilePreview">
+
+                                                                <i className="fa-solid fa-file-pdf"></i>
+
+                                                                <div className="chatFileName">
+                                                                    {chat.attachment?.fileName}
+                                                                </div>
+
                                                             </div>
-
-                                                        </div>
+                                                        )
                                                     )
                                                 }
                                                 {
-                                                    chat.content && (
+                                                    chat.content?.trim() && (
+
                                                         <p className="userMessage">
                                                             {chat.content}
                                                         </p>
-                                                    )
 
+                                                    )
                                                 }
 
 

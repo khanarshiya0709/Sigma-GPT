@@ -129,10 +129,20 @@ router.post("/chat", upload.single("file"), async (req, res) => {
         if (!thread) {
             thread = new Thread({
                 threadId,
-                title: message,
+                title:
+                    message.trim()
+
+                        ? message
+
+                        : req.file
+
+                            ? req.file.originalname.split(".")[0]
+
+                            : "New Chat",
                 messages: [{
                     role: "user",
                     content: message,
+                    //is image going throudh yes bcz multer treats image as file
                     attachment: req.file ? {
                         type: req.file.mimetype,
                         fileName: req.file.originalname,
@@ -147,7 +157,7 @@ router.post("/chat", upload.single("file"), async (req, res) => {
                 attachment: req.file ? {
                     type: req.file.mimetype,
                     fileName: req.file.originalname,
-                    filePath: req.file.path
+                    filePath: req.file.filename
                 } : null
             });
         }
@@ -163,7 +173,17 @@ router.post("/chat", upload.single("file"), async (req, res) => {
 
         await thread.save();
 
-        res.json({ reply: assistantReply, threadId }); // 🔥 send back id
+        res.json({
+            reply: assistantReply, threadId,
+            attachment: req.file ?
+                {
+                    fileName: req.file.originalname,
+                    type: req.file.mimetype,
+                    filePath: req.file.path
+                } : null
+
+
+        }); // 🔥 send back id
 
     } catch (err) {
         console.log(err);

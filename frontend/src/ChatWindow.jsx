@@ -12,10 +12,12 @@ function ChatWindow() {
     const [isOpen, setIsOpen] = useState(false);
     const [showUploadMenu, setShowUploadMenu] = useState(false);
     const fileInputRef = useRef(null);
+    const imageInputRef = useRef(null);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedImage, setSelectedImage] = useState(null);
 
     const getReply = async () => {
-        if (!prompt.trim() && !selectedFile) {
+        if (!prompt.trim() && !selectedFile && !selectedImage) {
             return;
         }
         setLoading(true);
@@ -27,6 +29,9 @@ function ChatWindow() {
         formData.append("threadId", currThreadId);
         if (selectedFile) {
             formData.append("file", selectedFile);
+        }
+        if (selectedImage) {
+            formData.append("file", selectedImage);
         }
 
 
@@ -58,19 +63,24 @@ function ChatWindow() {
 
     //append new chat to prevChats
     useEffect(() => {
-        if (prompt && reply) {
+        if ((prompt || selectedFile || selectedImage) && reply) {
             setPrevChats(prevChats => [
                 ...prevChats,
                 {
                     role: "user",
                     content: prompt,
-                    attachment: selectedFile ? {
+                    attachment:
+                        selectedImage ? {
+                            file: selectedImage.name,
+                            type: selectedImage.type
+                        } :
+                            selectedFile ? {
 
-                        fileName: selectedFile.name,
+                                fileName: selectedFile.name,
 
-                        type: selectedFile.type
+                                type: selectedFile.type
 
-                    } : null
+                            } : null
                 },
                 {
                     role: "assistant",
@@ -81,15 +91,85 @@ function ChatWindow() {
         setPrompt("");
         setSelectedFile(null);
 
+        setSelectedImage(null);
     }, [reply]);
+
+    useEffect(() => {
+
+        setSelectedFile(null);
+
+        setSelectedImage(null);
+
+    }, [currThreadId]);
 
     const handleProfileClick = () => {
         setIsOpen(!isOpen);
     }
 
+    useEffect(() => {
+
+        if (currThreadId) {
+
+            localStorage.setItem(
+                "threadId",
+                currThreadId
+            );
+        }
+
+    }, [currThreadId]);
+
+
+    useEffect(() => {
+
+        const savedThreadId =
+            localStorage.getItem("threadId");
+
+        if (!savedThreadId) return;
+
+        setCurrThreadId(savedThreadId);
+
+    }, []);
+
+
+
+    useEffect(() => {
+
+        if (!currThreadId) return;
+
+        const getChats = async () => {
+
+            try {
+
+                const response =
+                    await fetch(
+                        `http://localhost:8080/api/thread/${currThreadId}`
+                    );
+
+                if (!response.ok) {
+
+                    setPrevChats([]);
+
+                    return;
+                }
+
+                const data =
+                    await response.json();
+
+                setPrevChats(data);
+
+            } catch (err) {
+
+                console.log(err);
+            }
+        };
+
+        getChats();
+
+    }, [currThreadId]);
 
     return (
         <div className="ChatWindow">
+            consol.log("chatwindo render");
             <div className="navbar">
                 <span>SigmaGPT <i className="fa-solid fa-angle-down"></i></span>
                 <div className="userIconDiv" onClick={handleProfileClick}>
@@ -125,29 +205,64 @@ function ChatWindow() {
                     </div>
 
                     {
-                        selectedFile ? (
+                        (selectedFile || selectedImage) ? (
+                            <div>
 
-                            <div className="fileContainer">
+                                {
+                                    selectedImage ? (
+                                        <>
+                                            <div className="imageContainer">
+                                                <img
+                                                    src={URL.createObjectURL(selectedImage)}
+                                                    alt="preview"
+                                                    className="selectedImage"
+                                                />
 
-                                <div className="filePreview">
+                                                <i
+                                                    className="fa-solid fa-xmark removeImage"
+                                                    onClick={() => {
+                                                        setSelectedImage(null);
+                                                    }}
+                                                ></i>
+                                            </div>
+                                        </>
 
-                                    <i className="fa-solid fa-file"></i>
 
-                                    <span className="fileName">
-                                        {selectedFile.name}
-                                    </span>
 
-                                </div>
 
-                                <i
-                                    className="fa-solid fa-xmark removeFile"
+                                    ) : (
 
-                                    onClick={() => {
-                                        setSelectedFile(null);
-                                    }}
-                                ></i>
+                                        <>
 
+                                            <div className="fileContainer">
+
+                                                <div className="filePreview">
+
+                                                    <i className="fa-solid fa-file"></i>
+
+                                                    <span className="fileName">
+                                                        {selectedFile.name}
+                                                    </span>
+
+                                                </div>
+
+                                                <i
+                                                    className="fa-solid fa-xmark removeFile"
+
+                                                    onClick={() => {
+                                                        setSelectedFile(null);
+                                                    }}
+                                                ></i>
+                                            </div>
+
+
+                                        </>
+
+                                    )
+                                }
                             </div>
+
+
 
 
                         ) : (
@@ -156,10 +271,28 @@ function ChatWindow() {
 
                                 <div className="uploadMenu">
 
-                                    <button>
+                                    <button onClick={() => {
+                                        imageInputRef.current.click();
+
+                                    }}>
                                         <i className="fa-solid fa-images"></i>
 
                                         Choose Image
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            ref={imageInputRef}
+                                            style={{ display: "none" }}
+                                            onChange={(e) => {
+                                                const image =
+                                                    e.target.files[0];
+
+                                                setSelectedImage(image);
+
+                                                setShowUploadMenu(false);
+                                            }}
+
+                                        />
                                     </button>
 
                                     <button
@@ -214,7 +347,7 @@ function ChatWindow() {
 
             </div>
 
-        </div>
+        </div >
     )
 };
 

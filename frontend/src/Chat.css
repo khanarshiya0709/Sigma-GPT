@@ -234,3 +234,25 @@
 .chatFileName::-webkit-scrollbar {
     display: none;
 }
+
+.chatImage {
+    width: 120px;
+    border-radius: 12px;
+}
+
+.imageOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 9999;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.bigImage {
+    max-width: 80%;
+    max-height: 80%;
+    border-radius: 20px;
+}
