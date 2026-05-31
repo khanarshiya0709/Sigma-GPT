@@ -39,7 +39,7 @@ function Sidebar() {
         setNewChat(true);
         setPrompt(" ");
         setReply(null);
-        setCurrThreadId(uuidv4());
+        setCurrThreadId(null);
         setPrevChats([]);
     }
 

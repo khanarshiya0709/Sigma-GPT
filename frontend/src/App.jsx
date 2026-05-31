@@ -10,9 +10,11 @@ import { v4 as uuidv4 } from "uuid";
 function App() {
   console.log("uuid test", uuidv4());
 
-  const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState(() => {
+    return localStorage.getItem("draft") || "";
+  });
   const [reply, setReply] = useState(null);
-  const [currThreadId, setCurrThreadId] = useState(uuidv4());
+  const [currThreadId, setCurrThreadId] = useState(null);//(uuidv4());
   const [prevChats, setPrevChats] = useState([]); // stores all chats of curr threads
   const [newChat, setNewChat] = useState(true);
   const [allThreads, setAllThreads] = useState([]);

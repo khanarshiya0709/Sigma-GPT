@@ -52,6 +52,7 @@ function ChatWindow() {
             const res = await response.json();
             console.log(res);
             setReply(res.reply);
+            setCurrThreadId(res.threadId);
 
 
 
@@ -89,6 +90,10 @@ function ChatWindow() {
             ]);
         }
         setPrompt("");
+        localStorage.removeItem(
+            "draft"
+        );
+
         setSelectedFile(null);
 
         setSelectedImage(null);
@@ -130,6 +135,29 @@ function ChatWindow() {
 
     }, []);
 
+    useEffect(() => {
+        if (prompt.trim() === "") {
+
+            localStorage.removeItem("draft");
+        } else {
+            localStorage.setItem(
+                "draft",
+                prompt
+            );
+
+        }
+
+
+
+    }, [prompt]);
+
+    useEffect(() => {
+        const savedDraft = localStorage.getItem("draft");
+        if (savedDraft) {
+            setPrompt(savedDraft);
+        }
+    }, []);
+
 
 
     useEffect(() => {
@@ -168,8 +196,8 @@ function ChatWindow() {
     }, [currThreadId]);
 
     return (
+
         <div className="ChatWindow">
-            consol.log("chatwindo render");
             <div className="navbar">
                 <span>SigmaGPT <i className="fa-solid fa-angle-down"></i></span>
                 <div className="userIconDiv" onClick={handleProfileClick}>
