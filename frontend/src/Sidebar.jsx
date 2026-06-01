@@ -41,6 +41,10 @@ function Sidebar() {
         setReply(null);
         setCurrThreadId(null);
         setPrevChats([]);
+        localStorage.removeItem(
+            "threadId"
+        );
+
     }
 
     useEffect(() => {

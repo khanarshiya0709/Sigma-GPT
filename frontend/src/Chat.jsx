@@ -6,7 +6,7 @@ import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
 
 function Chat() {
-    const { newChat, prevChats, reply, setPrevChats } = useContext(MyContext);
+    const { newChat, prevChats, reply, setPrevChats, setPrompt, setReply } = useContext(MyContext);
 
     const [latestReply, setLatestReply] = useState(null);
     const [copiedIndex, setCopiedIndex] = useState(null);
@@ -152,7 +152,7 @@ function Chat() {
         : 0;
 
 
-    // 🔹 Save edit
+    // // 🔹 Save edit
     const handleSave = (idx) => {
         const updatedChats = [...prevChats];
         updatedChats[idx].content = editText;
@@ -160,6 +160,9 @@ function Chat() {
 
         setEditIndex(null);
         setEditText("");
+
+
+
     };
 
     // 🔹 Cancel edit
@@ -167,6 +170,7 @@ function Chat() {
         setEditIndex(null);
         setEditText("");
     };
+
 
     return (
         <>
@@ -275,7 +279,6 @@ function Chat() {
                                                             <img
                                                                 src={`http://localhost:8080/uploads/${encodeURIComponent(chat.attachment?.filePath)}`} alt="chat-image"
                                                                 className="chatImage"
-                                                                alt="chat-image"
                                                                 onClick={() =>
                                                                     setSelectedChatImage(
                                                                         `http://localhost:8080/uploads/${encodeURIComponent(chat.attachment.filePath)}`

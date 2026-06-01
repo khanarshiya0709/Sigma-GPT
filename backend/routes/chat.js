@@ -2,7 +2,16 @@ import express from "express";
 import Thread from "../models/Thread.js";
 import getGeminiAPIResponse from "../utils/giminiai.js";
 import { v4 as uuidv4 } from "uuid"; // 🔥 ADD THIS
+import Memory from "../models/Memory.js";
 import upload from "../middleware/upload.js";
+import saveMemory from "../utils/memoryExtractor.js";
+
+// const globalMemory = [
+//     "user name is arshiya",
+//     "user is building sigmaGPT",
+//     "user prefers teacher style explanation",
+//     "user loves eating mangose and dringking milkand tead"
+// ];
 
 const router = express.Router();
 
@@ -162,7 +171,19 @@ router.post("/chat", upload.single("file"), async (req, res) => {
             });
         }
 
-        const assistantReply = await getGeminiAPIResponse(message, req.file?.path, req.file?.mimetype);
+        const memories = await Memory.find();
+        console.log(memories);
+        const globalMemory =
+            memories.map(
+                (memory) =>
+                    memory.content
+            );
+        //thread memory
+        const converstionHistory = thread.messages.slice(-20).map((chat) => chat.content).join("\n");
+        const finalPrompt = `${globalMemory.join("\n")} ${converstionHistory} user: ${message}`;
+
+        await saveMemory(message);
+        const assistantReply = await getGeminiAPIResponse(finalPrompt, req.file?.path, req.file?.mimetype);
 
         thread.messages.push({
             role: "assistant",

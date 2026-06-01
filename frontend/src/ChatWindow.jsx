@@ -26,7 +26,14 @@ function ChatWindow() {
 
         const formData = new FormData();
         formData.append("message", prompt);
-        formData.append("threadId", currThreadId);
+        // formData.append("threadId", currThreadId);
+        if (currThreadId) {
+
+            formData.append(
+                "threadId",
+                currThreadId
+            );
+        }
         if (selectedFile) {
             formData.append("file", selectedFile);
         }
@@ -90,7 +97,7 @@ function ChatWindow() {
             ]);
         }
         setPrompt("");
-        localStorage.removeItem(
+        sessionStorage.removeItem(
             "draft"
         );
 
@@ -113,9 +120,10 @@ function ChatWindow() {
 
     useEffect(() => {
 
+
         if (currThreadId) {
 
-            localStorage.setItem(
+            sessionStorage.setItem(
                 "threadId",
                 currThreadId
             );
@@ -127,7 +135,7 @@ function ChatWindow() {
     useEffect(() => {
 
         const savedThreadId =
-            localStorage.getItem("threadId");
+            sessionStorage.getItem("threadId");
 
         if (!savedThreadId) return;
 
@@ -138,9 +146,9 @@ function ChatWindow() {
     useEffect(() => {
         if (prompt.trim() === "") {
 
-            localStorage.removeItem("draft");
+            sessionStorage.removeItem("draft");
         } else {
-            localStorage.setItem(
+            sessionStorage.setItem(
                 "draft",
                 prompt
             );
@@ -152,7 +160,7 @@ function ChatWindow() {
     }, [prompt]);
 
     useEffect(() => {
-        const savedDraft = localStorage.getItem("draft");
+        const savedDraft = sessionStorage.getItem("draft");
         if (savedDraft) {
             setPrompt(savedDraft);
         }
