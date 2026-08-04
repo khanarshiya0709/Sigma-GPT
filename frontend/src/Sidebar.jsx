@@ -35,6 +35,7 @@ function Sidebar() {
         getAllThreads();
     }, [currThreadId]);
 
+
     const createNewChat = () => {
         setNewChat(true);
         setPrompt(" ");
@@ -48,22 +49,11 @@ function Sidebar() {
     }
 
     useEffect(() => {
-        const handleClickOutside = () => {
-            setOpenMenu(null);
-        };
-        document.addEventListener(
-            "click",
-            handleClickOutside
-        );
-        return () => {
-            document.removeEventListener(
-                "click",
-                handleClickOutside
-
-            );
-        };
-
+        const handleClickOutside = () => setOpenMenu(null);
+        document.addEventListener("click", handleClickOutside);
+        return () => document.removeEventListener("click", handleClickOutside);
     }, []);
+
 
     const clickThread = async (newThreadId) => {
         setCurrThreadId(newThreadId);
@@ -134,51 +124,57 @@ function Sidebar() {
         setRenameText("");
     };
 
+    // ✅ YE NAYA CODE PASTE KARO:
     const handlePin = async (threadId) => {
         const clickedThread = allThreads.find(
             (thread) => thread.threadId === threadId
         );
 
+        // 1. Check karo kitne threads pehle se pinned hain
+        const pinnedCount = allThreads.filter((thread) => thread.isPinned).length;
+
+        // 2. Agar current thread unpinned hai aur 3 pehle se pinned hain, to rok do
+        if (!clickedThread.isPinned && pinnedCount >= 3) {
+            alert("Maximum 3 pin allowed");
+            return;
+        }
+
         const updatedPinnedState = !clickedThread.isPinned;
 
-        await fetch(
-            `http://localhost:8080/api/thread/${threadId}`,
-            {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    isPinned: updatedPinnedState
-                })
-            }
-        );
-        setAllThreads((prev) => {
-            const updatedThreads = prev.map((thread) => {
-
-                if (thread.threadId === threadId) {
-                    return {
-                        ...thread,
-                        isPinned: !thread.isPinned
-                    }
-
+        try {
+            await fetch(
+                `http://localhost:8080/api/thread/${threadId}`,
+                {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        isPinned: updatedPinnedState
+                    })
                 }
-                return thread;
+            );
 
+            setAllThreads((prev) => {
+                const updatedThreads = prev.map((thread) => {
+                    if (thread.threadId === threadId) {
+                        return {
+                            ...thread,
+                            isPinned: updatedPinnedState
+                        };
+                    }
+                    return thread;
+                });
+
+                const pinnedThreads = updatedThreads.filter((thread) => thread.isPinned);
+                const unPinnedThreads = updatedThreads.filter((thread) => !thread.isPinned);
+
+                return [...pinnedThreads, ...unPinnedThreads];
             });
-
-            const pinnedThread = updatedThreads.filter(
-                (thread) => thread.isPinned
-            );
-
-            const unPinnedThreads = updatedThreads.filter(
-                (thread) => !thread.isPinned
-            );
-            return [...pinnedThread, ...unPinnedThreads];
-
-
-        });
-    }
+        } catch (err) {
+            console.log("Error pinning thread:", err);
+        }
+    };
 
     return (
         <section className="sidebar">

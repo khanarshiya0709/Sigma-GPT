@@ -3,7 +3,7 @@ import Chat from "./Chat.jsx";
 import { MyContext } from './MyContext';
 import { useContext, useState, useEffect, useRef } from "react";
 import { SyncLoader } from "react-spinners";
-// useRed= hidden input ko access karega
+// useRef= hidden input ko access karega
 
 
 function ChatWindow() {
@@ -20,6 +20,7 @@ function ChatWindow() {
         if (!prompt.trim() && !selectedFile && !selectedImage) {
             return;
         }
+
         setLoading(true);
         setNewChat(false);
 
@@ -41,6 +42,7 @@ function ChatWindow() {
             formData.append("file", selectedImage);
         }
 
+        const token = localStorage.getItem("token");
 
         const options = {
 
@@ -52,12 +54,19 @@ function ChatWindow() {
             //     message: prompt,
             //     threadId: currThreadId
             // })
+
+            headers: {
+                "Authorization": `Bearer ${token}`
+            },
             body: formData
         };
+
+
+
         try {
             const response = await fetch("http://localhost:8080/api/chat", options);
             const res = await response.json();
-            console.log(res);
+            // console.log(res);
             setReply(res.reply);
             setCurrThreadId(res.threadId);
 
@@ -66,29 +75,32 @@ function ChatWindow() {
         } catch (err) {
             console.log(err);
         }
+
         setLoading(false);
     }
 
     //append new chat to prevChats
+    // 🔹 Append new chat to prevChats
     useEffect(() => {
         if ((prompt || selectedFile || selectedImage) && reply) {
+
+            // Instant Preview ke liye Local Attachment Object
+            const localAttachment = selectedImage ? {
+                fileName: selectedImage.name,
+                type: selectedImage.type,
+                filePath: URL.createObjectURL(selectedImage) //ram me local preview url ban jata hai ,
+            } : selectedFile ? {
+                fileName: selectedFile.name,
+                type: selectedFile.type,
+                filePath: URL.createObjectURL(selectedFile)
+            } : null;
+
             setPrevChats(prevChats => [
                 ...prevChats,
                 {
                     role: "user",
                     content: prompt,
-                    attachment:
-                        selectedImage ? {
-                            file: selectedImage.name,
-                            type: selectedImage.type
-                        } :
-                            selectedFile ? {
-
-                                fileName: selectedFile.name,
-
-                                type: selectedFile.type
-
-                            } : null
+                    attachment: localAttachment // 👈 Fixed Attachment Object
                 },
                 {
                     role: "assistant",
@@ -96,14 +108,12 @@ function ChatWindow() {
                 }
             ]);
         }
+
         setPrompt("");
-        sessionStorage.removeItem(
-            "draft"
-        );
-
+        sessionStorage.removeItem("draft");
         setSelectedFile(null);
-
         setSelectedImage(null);
+
     }, [reply]);
 
     useEffect(() => {
@@ -203,6 +213,13 @@ function ChatWindow() {
 
     }, [currThreadId]);
 
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        sessionStorage.clear();
+        window.location.reload(); // Refresh to show login screen
+    };
+
     return (
 
         <div className="ChatWindow">
@@ -219,7 +236,9 @@ function ChatWindow() {
                     <div className="dropDownItem"><i className="fa-solid fa-arrow-up-right-dots"></i>Upgrade plan</div>
                     <div className="dropDownItem"><i className="fa-solid fa-gear"></i>Settings</div>
                     <div className="dropDownItem"><i className="fa-solid fa-circle-question"></i>Help</div>
-                    <div className="dropDownItem"><i className="fa-solid fa-arrow-right-from-bracket"></i>Log out</div>
+                    <div className="dropDownItem" onClick={handleLogout}>
+                        <i className="fa-solid fa-arrow-right-from-bracket"></i>Log out
+                    </div>
 
 
 

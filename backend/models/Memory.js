@@ -8,7 +8,11 @@ const memorySchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+
 export default mongoose.model(
     "Memory",
     memorySchema
 );
+
+//this file store specific fact related to you;
+//what details should the ai remember about the user it store;

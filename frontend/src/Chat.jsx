@@ -24,6 +24,26 @@ function Chat() {
     const chatEndRef = useRef(null);
     const timerRef = useRef(null);
 
+    const getImageUrl = (attachment) => {
+        if (!attachment || !attachment.filePath) return "";
+
+        const path = attachment.filePath;
+
+        // 1. Local preview ke liye
+        if (path.startsWith("blob:") || path.startsWith("data:")) {
+            return path;
+        }
+
+        // 2. Agar uploads pehle se path me ho
+        if (path.includes("uploads/")) {
+            const cleanPath = path.replace(/\\/g, "/");
+            return `http://localhost:8080/${cleanPath}`;
+        }
+
+        // 3. Normal File Name
+        return `http://localhost:8080/uploads/${encodeURIComponent(path)}`;
+    };
+
 
     // 🔹 Typing effect
     useEffect(() => {
@@ -46,6 +66,7 @@ function Chat() {
 
         return () => clearInterval(interval);
     }, [prevChats, reply]);
+
 
     // 🔹 Auto scroll
     useEffect(() => {
@@ -153,16 +174,24 @@ function Chat() {
 
 
     // // 🔹 Save edit
-    const handleSave = (idx) => {
-        const updatedChats = [...prevChats];
-        updatedChats[idx].content = editText;
-        setPrevChats(updatedChats);
+    // const handleSave = (idx) => {
+    //     const updatedChats = [...prevChats];
+    //     updatedChats[idx].content = editText;
 
+    //     setPrevChats(updatedChats);
+
+    //     setEditIndex(null);
+    //     setEditText("");
+    // };
+
+    const handleSave = (idx) => {
+        const updatedChats = prevChats.map((chat, i) =>
+            i === idx ? { ...chat, content: editText } : chat
+        );
+
+        setPrevChats(updatedChats);
         setEditIndex(null);
         setEditText("");
-
-
-
     };
 
     // 🔹 Cancel edit
@@ -277,13 +306,10 @@ function Chat() {
                                                         chat.attachment?.type?.startsWith("image/") ? (
 
                                                             <img
-                                                                src={`http://localhost:8080/uploads/${encodeURIComponent(chat.attachment?.filePath)}`} alt="chat-image"
+                                                                src={getImageUrl(chat.attachment)}
+                                                                alt="chat-image"
                                                                 className="chatImage"
-                                                                onClick={() =>
-                                                                    setSelectedChatImage(
-                                                                        `http://localhost:8080/uploads/${encodeURIComponent(chat.attachment.filePath)}`
-                                                                    )
-                                                                }
+                                                                onClick={() => setSelectedChatImage(getImageUrl(chat.attachment))}
                                                             />
 
                                                         ) : (
@@ -362,79 +388,79 @@ function Chat() {
                 }
 
                 {/* 🔹 Latest reply */}
-                {
-                    prevChats.length > 0 && (
-                        <>
-                            {latestReply === null ? (
-                                <>{
-                                    prevChats[prevChats.length - 1].content && (
+
+                {prevChats && prevChats.length > 0 && (
+                    <>
+                        {latestReply === null ? (
+                            <>{
+                                prevChats[prevChats.length - 1].content && (
 
 
 
-                                        <div className="gptDiv">
-
-                                            <ReactMarkdown rehypePlugins={rehypeHighlight}>
-                                                {prevChats[prevChats.length - 1].content}
-                                            </ReactMarkdown>
-
-                                        </div>
-                                    )
-                                }
-
-                                    <div className="gptActions">
-                                        <i
-                                            className={
-                                                copiedIndex === "last"
-                                                    ? "fa-solid fa-check"
-                                                    : "fa-regular fa-copy"
-                                            }
-                                            onClick={() =>
-                                                copyMessage(
-                                                    prevChats[prevChats.length - 1].content,
-                                                    "last"
-                                                )
-                                            }
-                                        ></i>
-
-                                        <i
-                                            className="fa-solid fa-volume-high"
-                                            onClick={() =>
-                                                speakMessage(
-                                                    prevChats[prevChats.length - 1].content
-                                                )
-                                            }
-                                        ></i>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
                                     <div className="gptDiv">
+
                                         <ReactMarkdown rehypePlugins={rehypeHighlight}>
-                                            {latestReply}
+                                            {prevChats[prevChats.length - 1].content}
                                         </ReactMarkdown>
-                                    </div>
 
-                                    <div className="gptActions">
-                                        <i
-                                            className={
-                                                copiedIndex === "latest"
-                                                    ? "fa-solid fa-check"
-                                                    : "fa-regular fa-copy"
-                                            }
-                                            onClick={() =>
-                                                copyMessage(latestReply, "latest")
-                                            }
-                                        ></i>
-
-                                        <i
-                                            className="fa-solid fa-volume-high"
-                                            onClick={() => speakMessage(latestReply)}
-                                        ></i>
                                     </div>
-                                </>
-                            )}
-                        </>
-                    )
+                                )
+                            }
+
+                                <div className="gptActions">
+                                    <i
+                                        className={
+                                            copiedIndex === "last"
+                                                ? "fa-solid fa-check"
+                                                : "fa-regular fa-copy"
+                                        }
+                                        onClick={() =>
+                                            copyMessage(
+                                                prevChats[prevChats.length - 1].content,
+                                                "last"
+                                            )
+                                        }
+                                    ></i>
+
+                                    <i
+                                        className="fa-solid fa-volume-high"
+                                        onClick={() =>
+                                            speakMessage(
+                                                prevChats[prevChats.length - 1].content
+                                            )
+                                        }
+                                    ></i>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="gptDiv">
+                                    <ReactMarkdown rehypePlugins={rehypeHighlight}>
+                                        {latestReply}
+                                    </ReactMarkdown>
+                                </div>
+
+                                <div className="gptActions">
+                                    <i
+                                        className={
+                                            copiedIndex === "latest"
+                                                ? "fa-solid fa-check"
+                                                : "fa-regular fa-copy"
+                                        }
+                                        onClick={() =>
+                                            copyMessage(latestReply, "latest")
+                                        }
+                                    ></i>
+
+                                    <i
+                                        className="fa-solid fa-volume-high"
+                                        onClick={() => speakMessage(latestReply)}
+                                    ></i>
+                                </div>
+                            </>
+                        )}
+                    </>
+                )
                 }
 
                 <div ref={chatEndRef}></div>

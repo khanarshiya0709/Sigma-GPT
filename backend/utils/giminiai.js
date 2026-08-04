@@ -5,9 +5,9 @@ const getGeminiAPIResponse = async (message, filePath, mimeType) => {
     try {
         let fileData = null;
         if (filePath) {
-            fileData = fs.readFileSync(filePath)
-                .toString("base64");
+            fileData = fs.readFileSync(filePath).toString("base64");
         }
+
         const response = await fetch(
             `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-lite:generateContent?key=${process.env.GEMINI_API_KEY}`,
             {
@@ -32,6 +32,7 @@ const getGeminiAPIResponse = async (message, filePath, mimeType) => {
                 })
             }
         );
+
 
         const data = await response.json();
         console.log("API RESPONSE:", data);

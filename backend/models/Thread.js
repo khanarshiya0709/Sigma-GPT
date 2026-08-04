@@ -13,7 +13,7 @@ const MessageSchema = new mongoose.Schema({
     },
 
     attachment: {
-        type: {
+        type: { //type image/png, application/pdf
             type: String,
             default: null
         },
@@ -39,10 +39,18 @@ const ThreadSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true
+    },
+
     title: {
         type: String,
         default: "new chat"
     },
+
     messages: [MessageSchema],
     createdAt: {
         type: Date,

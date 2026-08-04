@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid"; // 🔥 ADD THIS
 import Memory from "../models/Memory.js";
 import upload from "../middleware/upload.js";
 import saveMemory from "../utils/memoryExtractor.js";
+import authMiddleware from "../middleware/auth.js";
 
 // const globalMemory = [
 //     "user name is arshiya",
@@ -14,9 +15,6 @@ import saveMemory from "../utils/memoryExtractor.js";
 // ];
 
 const router = express.Router();
-
-
-
 
 // ✅ Test route (fixed - no hardcoded id)
 router.post("/test", async (req, res) => {
@@ -34,6 +32,7 @@ router.post("/test", async (req, res) => {
         res.status(500).json({ error: "Failed to save in DB" });
     }
 });
+
 
 // ✅ Get all threads
 router.get("/thread", async (req, res) => {
@@ -87,6 +86,8 @@ router.delete("/thread/:threadId", async (req, res) => {
 });
 
 //update
+//Dynamic URL: /thread/:threadId (Yeh kisi bhi ID ke liye kaam karega, chahe ID abc, xyz, ya 1b9d-4b2d ho).
+//fix nahi rahe ga /thread/123
 router.patch("/thread/:threadId", async (req, res) => {
 
     const { threadId } = req.params;
@@ -111,7 +112,9 @@ router.patch("/thread/:threadId", async (req, res) => {
 });
 
 // ✅ Chat route (FIXED 🔥)
-router.post("/chat", upload.single("file"), async (req, res) => {
+router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => {
+    const userId = req.user.userId;
+
     let { threadId, message } = req.body;
     console.log(req.body);
     console.log(req.file);
@@ -131,23 +134,22 @@ router.post("/chat", upload.single("file"), async (req, res) => {
     if (!threadId) {
         threadId = uuidv4();  // auto-generate id
     }
-
+    //database me save nahi hai isley try ke andar code hai if else
+    //userid se link karna hoga agr new threadid bane gi q ke user a ka bantana hoga next time ye thread who hi dekh sake,
     try {
-        let thread = await Thread.findOne({ threadId });
+        let thread = await Thread.findOne({ threadId, userId });
 
         if (!thread) {
             thread = new Thread({
                 threadId,
-                title:
-                    message.trim()
+                userId,
+                title: message.trim()
+                    ? message
+                    : req.file
 
-                        ? message
+                        ? req.file.originalname.split(".")[0]
 
-                        : req.file
-
-                            ? req.file.originalname.split(".")[0]
-
-                            : "New Chat",
+                        : "New Chat",
                 messages: [{
                     role: "user",
                     content: message,
@@ -155,7 +157,7 @@ router.post("/chat", upload.single("file"), async (req, res) => {
                     attachment: req.file ? {
                         type: req.file.mimetype,
                         fileName: req.file.originalname,
-                        filePath: req.file.path
+                        filePath: req.file.filename
                     } : null
                 }]
             });
@@ -173,11 +175,8 @@ router.post("/chat", upload.single("file"), async (req, res) => {
 
         const memories = await Memory.find();
         console.log(memories);
-        const globalMemory =
-            memories.map(
-                (memory) =>
-                    memory.content
-            );
+        const globalMemory = memories.map((memory) => memory.content);
+
         //thread memory
         const converstionHistory = thread.messages.slice(-20).map((chat) => chat.content).join("\n");
         const finalPrompt = `${globalMemory.join("\n")} ${converstionHistory} user: ${message}`;
@@ -192,7 +191,7 @@ router.post("/chat", upload.single("file"), async (req, res) => {
 
         thread.updatedAt = new Date();
 
-        await thread.save();
+        await thread.save(); //this line saves in db;
 
         res.json({
             reply: assistantReply, threadId,
@@ -200,7 +199,7 @@ router.post("/chat", upload.single("file"), async (req, res) => {
                 {
                     fileName: req.file.originalname,
                     type: req.file.mimetype,
-                    filePath: req.file.path
+                    filePath: req.file.filename
                 } : null
 
 
