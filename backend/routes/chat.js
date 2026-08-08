@@ -1,26 +1,19 @@
 import express from "express";
 import Thread from "../models/Thread.js";
 import getGeminiAPIResponse from "../utils/giminiai.js";
-import { v4 as uuidv4 } from "uuid"; // 🔥 ADD THIS
+import { v4 as uuidv4 } from "uuid";
 import Memory from "../models/Memory.js";
 import upload from "../middleware/upload.js";
 import saveMemory from "../utils/memoryExtractor.js";
 import authMiddleware from "../middleware/auth.js";
 
-// const globalMemory = [
-//     "user name is arshiya",
-//     "user is building sigmaGPT",
-//     "user prefers teacher style explanation",
-//     "user loves eating mangose and dringking milkand tead"
-// ];
-
 const router = express.Router();
 
-// ✅ Test route (fixed - no hardcoded id)
+// ✅ Test route
 router.post("/test", async (req, res) => {
     try {
         const thread = new Thread({
-            threadId: uuidv4(),   // 🔥 FIXED
+            threadId: uuidv4(),
             title: "test"
         });
 
@@ -34,11 +27,11 @@ router.post("/test", async (req, res) => {
 });
 
 
-// ✅ Get all threads
-router.get("/thread", async (req, res) => {
+// ✅ 1. Get ALL threads (FIXED: Sirf Logged-in User ki threads aayengi)
+router.get("/thread", authMiddleware, async (req, res) => {
     try {
-        const threads = await Thread.find({}).sort({ updatedAt: -1 });
-        //descending order of updatedAT..most recent data on top
+        const userId = req.user.userId || req.user.id;
+        const threads = await Thread.find({ userId }).sort({ isPinned: -1, updatedAt: -1 });
         res.json(threads);
 
     } catch (err) {
@@ -47,15 +40,17 @@ router.get("/thread", async (req, res) => {
     }
 });
 
-// ✅ Get specific thread
-router.get("/thread/:threadId", async (req, res) => {
+// ✅ 2. Get specific thread (FIXED: Sirf apni thread access kar sake)
+router.get("/thread/:threadId", authMiddleware, async (req, res) => {
     const { threadId } = req.params;
+    const userId = req.user.userId || req.user.id;
 
     try {
-        const thread = await Thread.findOne({ threadId });
+        const thread = await Thread.findOne({ threadId, userId });
 
         if (!thread) {
-            return res.status(404).json({ error: "chat not found" });
+            // New thread ke case me 404 de kar screen blank hone ke bajaye empty messages array do
+            return res.status(200).json([]);
         }
 
         res.json(thread.messages);
@@ -66,12 +61,13 @@ router.get("/thread/:threadId", async (req, res) => {
     }
 });
 
-// ✅ Delete thread
-router.delete("/thread/:threadId", async (req, res) => {
+// ✅ 3. Delete thread (FIXED: Sirf apni thread delete kar sake)
+router.delete("/thread/:threadId", authMiddleware, async (req, res) => {
     const { threadId } = req.params;
+    const userId = req.user.userId || req.user.id;
 
     try {
-        const deletedThread = await Thread.findOneAndDelete({ threadId });
+        const deletedThread = await Thread.findOneAndDelete({ threadId, userId });
 
         if (!deletedThread) {
             return res.status(404).json({ error: "thread not found" });
@@ -85,57 +81,43 @@ router.delete("/thread/:threadId", async (req, res) => {
     }
 });
 
-//update
-//Dynamic URL: /thread/:threadId (Yeh kisi bhi ID ke liye kaam karega, chahe ID abc, xyz, ya 1b9d-4b2d ho).
-//fix nahi rahe ga /thread/123
-router.patch("/thread/:threadId", async (req, res) => {
-
+// ✅ 4. Update thread title (FIXED)
+router.patch("/thread/:threadId", authMiddleware, async (req, res) => {
     const { threadId } = req.params;
+    const userId = req.user.userId || req.user.id;
 
     try {
-        const updatedThread =
-            await Thread.findOneAndUpdate(
-                { threadId },
-                req.body,
-
-                { new: true }
-            );
+        const updatedThread = await Thread.findOneAndUpdate(
+            { threadId, userId },
+            req.body,
+            { new: true }
+        );
         res.json(updatedThread);
 
     } catch (err) {
         console.log(err);
-        res.status(500).json({
-            error: "failed to updae thread"
-        });
-
+        res.status(500).json({ error: "failed to update thread" });
     }
 });
 
-// ✅ Chat route (FIXED 🔥)
+// ✅ 5. Chat route (Already Working)
 router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => {
-    const userId = req.user.userId;
+    const userId = req.user.userId || req.user.id;
 
     let { threadId, message } = req.body;
-    console.log(req.body);
-    console.log(req.file);
 
     if (!message?.trim() && !req.file) {
         return res.status(400).json({ error: "missing message" });
     }
 
     if (message.length > 2000) {
-        return res.status(400).json({
-            error: "Character limit exceeded"
-        });
-
+        return res.status(400).json({ error: "Character limit exceeded" });
     }
 
-    // 🔥 IMPORTANT FIX
     if (!threadId) {
-        threadId = uuidv4();  // auto-generate id
+        threadId = uuidv4();
     }
-    //database me save nahi hai isley try ke andar code hai if else
-    //userid se link karna hoga agr new threadid bane gi q ke user a ka bantana hoga next time ye thread who hi dekh sake,
+
     try {
         let thread = await Thread.findOne({ threadId, userId });
 
@@ -146,14 +128,11 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
                 title: message.trim()
                     ? message
                     : req.file
-
                         ? req.file.originalname.split(".")[0]
-
                         : "New Chat",
                 messages: [{
                     role: "user",
                     content: message,
-                    //is image going throudh yes bcz multer treats image as file
                     attachment: req.file ? {
                         type: req.file.mimetype,
                         fileName: req.file.originalname,
@@ -174,10 +153,8 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
         }
 
         const memories = await Memory.find();
-        console.log(memories);
         const globalMemory = memories.map((memory) => memory.content);
 
-        //thread memory
         const converstionHistory = thread.messages.slice(-20).map((chat) => chat.content).join("\n");
         const finalPrompt = `${globalMemory.join("\n")} ${converstionHistory} user: ${message}`;
 
@@ -191,19 +168,17 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
 
         thread.updatedAt = new Date();
 
-        await thread.save(); //this line saves in db;
+        await thread.save();
 
         res.json({
-            reply: assistantReply, threadId,
-            attachment: req.file ?
-                {
-                    fileName: req.file.originalname,
-                    type: req.file.mimetype,
-                    filePath: req.file.filename
-                } : null
-
-
-        }); // 🔥 send back id
+            reply: assistantReply,
+            threadId,
+            attachment: req.file ? {
+                fileName: req.file.originalname,
+                type: req.file.mimetype,
+                filePath: req.file.filename
+            } : null
+        });
 
     } catch (err) {
         console.log(err);

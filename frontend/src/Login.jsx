@@ -12,7 +12,6 @@ function Login({ onLoginSuccess }) {
         e.preventDefault();
         setError("");
 
-        // Backend Signup aur Login endspoint
         const endpoint = isSignup ? "/api/auth/signup" : "/api/auth/login";
         const payload = isSignup ? { name, email, password } : { email, password };
 
@@ -30,15 +29,18 @@ function Login({ onLoginSuccess }) {
                 return;
             }
 
-            // 🔑 Token LocalStorage me save karo
+            // 1. Token local storage me save karo
             localStorage.setItem("token", data.token);
-            localStorage.setItem("user", JSON.stringify(data.user));
+            if (data.user) {
+                localStorage.setItem("user", JSON.stringify(data.user));
+            }
 
-            // App.jsx ko batao ki login success ho gaya
-            onLoginSuccess(data.user);
+            // 2. Parent (App.jsx) ko notify karo
+            onLoginSuccess();
+
         } catch (err) {
-            console.error(err);
-            setError("Server error. Please check backend.");
+            console.error("Auth error:", err);
+            setError("Server error. Please check if backend is running.");
         }
     };
 
