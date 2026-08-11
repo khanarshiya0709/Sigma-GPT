@@ -69,6 +69,7 @@ function App() {
   // Agar pehle se localStorage me currThreadId hai, toh iska matlab user purani thread par tha (newChat = false)
   const [newChat, setNewChat] = useState(() => {
     return !localStorage.getItem("currThreadId");
+
   }); const [allThreads, setAllThreads] = useState([]);
 
   // 🔹 Keep localStorage synced with current thread ID

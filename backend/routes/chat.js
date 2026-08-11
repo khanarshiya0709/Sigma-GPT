@@ -100,6 +100,145 @@ router.patch("/thread/:threadId", authMiddleware, async (req, res) => {
     }
 });
 
+
+
+// // ✅ 5. Edit Prompt & Regenerate Gemini Response (ReferenceError & VersionError Fixed)
+// router.post("/chat/edit", authMiddleware, async (req, res) => {
+//     try {
+//         const { threadId, messageIndex, newPrompt } = req.body;
+//         const userId = req.user?._id || req.user?.id || req.user?.userId;
+//         const idx = Number(messageIndex);
+
+//         if (!userId) {
+//             return res.status(401).json({ error: "Unauthorized user" });
+//         }
+
+//         // 1. Thread check karo
+//         const thread = await Thread.findOne({ threadId, userId });
+//         if (!thread) {
+//             return res.status(404).json({ error: "Thread not found" });
+//         }
+
+//         if (isNaN(idx) || !thread.messages[idx]) {
+//             return res.status(400).json({ error: "Invalid message index" });
+//         }
+
+//         // 2. Memory Extraction & Gemini AI Call
+//         await saveMemory(newPrompt);
+//         const memories = await Memory.find();
+//         const globalMemory = memories.map((m) => m.content);
+//         const converstionHistory = thread.messages.slice(0, idx).map((chat) => chat.content).join("\n");
+//         const finalPrompt = `${globalMemory.join("\n")} ${converstionHistory} user: ${newPrompt}`;
+
+//         const newAiResponse = await getGeminiAPIResponse(finalPrompt);
+
+//         // 3. Updated Messages Array Define Karo (Clean mapping)
+//         const updatedMessages = thread.messages.map((item) => {
+//             return item.toObject ? item.toObject() : item;
+//         });
+
+//         // User prompt update
+//         updatedMessages[idx].content = newPrompt;
+
+//         // Assistant reply update
+//         if (updatedMessages[idx + 1] && updatedMessages[idx + 1].role === "assistant") {
+//             updatedMessages[idx + 1].content = newAiResponse;
+//         } else {
+//             updatedMessages[idx + 1] = { role: "assistant", content: newAiResponse };
+//         }
+
+//         // 4. Direct Atomic Update in MongoDB
+//         const updatedThread = await Thread.findOneAndUpdate(
+//             { threadId, userId },
+//             {
+//                 $set: {
+//                     messages: updatedMessages,
+//                     updatedAt: new Date()
+//                 }
+//             },
+//             { new: true }
+//         );
+
+//         res.json({ success: true, updatedMessages: updatedThread.messages });
+
+//     } catch (error) {
+//         console.error("Edit and Regenerate Error:", error);
+//         res.status(500).json({ error: "Failed to regenerate response" });
+//     }
+// });
+
+// ✅ 5. Edit Prompt & Regenerate Gemini Response (With Thread Title Sync 🔥)
+router.post("/chat/edit", authMiddleware, async (req, res) => {
+    try {
+        const { threadId, messageIndex, newPrompt } = req.body;
+        const userId = req.user?._id || req.user?.id || req.user?.userId;
+        const idx = Number(messageIndex);
+
+        if (!userId) {
+            return res.status(401).json({ error: "Unauthorized user" });
+        }
+
+        const thread = await Thread.findOne({ threadId, userId });
+
+        if (!thread) {
+            return res.status(404).json({ error: "Thread not found" });
+        }
+
+        if (isNaN(idx) || !thread.messages[idx]) {
+            return res.status(400).json({ error: "Invalid message index" });
+        }
+
+        // 1. Memory Extraction & Gemini AI Call
+        await saveMemory(newPrompt);
+        const memories = await Memory.find();
+        const globalMemory = memories.map((m) => m.content);
+        const converstionHistory = thread.messages.slice(0, idx).map((chat) => chat.content).join("\n");
+        const finalPrompt = `${globalMemory.join("\n")} ${converstionHistory} user: ${newPrompt}`;
+
+        const newAiResponse = await getGeminiAPIResponse(finalPrompt);
+
+        // 2. Updated Messages Array
+        const updatedMessages = thread.messages.map((item) => {
+            return item.toObject ? item.toObject() : item;
+        });
+
+        updatedMessages[idx].content = newPrompt;
+
+        if (updatedMessages[idx + 1] && updatedMessages[idx + 1].role === "assistant") {
+            updatedMessages[idx + 1].content = newAiResponse;
+        } else {
+            updatedMessages[idx + 1] = { role: "assistant", content: newAiResponse };
+        }
+
+        // 💡 3. Build Update Object (Agar index 0 edit hua toh Title bhi badlo)
+        const updateData = {
+            messages: updatedMessages,
+            updatedAt: new Date()
+        };
+
+        if (idx === 0 && newPrompt.trim()) {
+            updateData.title = newPrompt.trim();
+        }
+
+        // 4. Atomic Database Update
+        const updatedThread = await Thread.findOneAndUpdate(
+            { threadId, userId },
+            { $set: updateData },
+            { new: true }
+        );
+
+        res.json({
+            success: true,
+            updatedMessages: updatedThread.messages,
+            updatedThread: updatedThread // 👈 Frontend sidebar update ke liye full updated thread
+        });
+
+    } catch (error) {
+        console.error("Edit and Regenerate Error:", error);
+        res.status(500).json({ error: "Failed to regenerate response" });
+    }
+});
+
 // ✅ 5. Chat route (Already Working)
 router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => {
     const userId = req.user.userId || req.user.id;
@@ -173,6 +312,7 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
         res.json({
             reply: assistantReply,
             threadId,
+            thread: thread,
             attachment: req.file ? {
                 fileName: req.file.originalname,
                 type: req.file.mimetype,

@@ -6,7 +6,7 @@ import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
 
 function Chat() {
-    const { newChat, prevChats, reply, setPrevChats, setPrompt, setReply, currThreadId } = useContext(MyContext);
+    const { newChat, prevChats, reply, setPrevChats, setPrompt, setReply, currThreadId, setAllThreads } = useContext(MyContext);
 
     const [latestReply, setLatestReply] = useState(null);
     const [copiedIndex, setCopiedIndex] = useState(null);
@@ -18,8 +18,7 @@ function Chat() {
     const [totalTime, setTotalTime] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
     const [barKey, setBarKey] = useState(0);
-    const [selectedChatImage,
-        setSelectedChatImage] = useState(null);
+    const [selectedChatImage, setSelectedChatImage] = useState(null);
 
     const chatEndRef = useRef(null);
     const timerRef = useRef(null);
@@ -46,6 +45,46 @@ function Chat() {
         return `http://localhost:8080/uploads/${encodeURIComponent(path)}`;
     };
 
+    // 🚀 NEW CHAT SYNC FIX: Jab bhi naya message aaye ya thread badle, Sidebar me real-time push kar do
+    useEffect(() => {
+        if (!currThreadId || !prevChats || prevChats.length === 0) return;
+
+        if (setAllThreads) {
+            setAllThreads((prevThreads) => {
+                const firstUserMsg = prevChats.find((m) => m.role === "user")?.content || "New Chat";
+                const exists = prevThreads.some((t) => t.threadId === currThreadId);
+
+                let updatedList;
+                if (exists) {
+                    updatedList = prevThreads.map((t) =>
+                        t.threadId === currThreadId
+                            ? { ...t, updatedAt: new Date().toISOString() }
+                            : t
+                    );
+                } else {
+                    // Naya thread instant sidebar me add hoga
+                    const newThreadObj = {
+                        threadId: currThreadId,
+                        title: firstUserMsg,
+                        isPinned: false,
+                        updatedAt: new Date().toISOString()
+                    };
+                    updatedList = [newThreadObj, ...prevThreads];
+                }
+
+                // Sorting (Pinned: a - b, Unpinned: b - a)
+                return [...updatedList].sort((a, b) => {
+                    if (a.isPinned && b.isPinned) {
+                        return new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0);
+                    }
+                    if (!a.isPinned && !b.isPinned) {
+                        return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+                    }
+                    return a.isPinned ? -1 : 1;
+                });
+            });
+        }
+    }, [currThreadId, prevChats?.length]);
 
     // 🔹 Typing effect
     useEffect(() => {
@@ -74,18 +113,16 @@ function Chat() {
         isFirstLoad.current = true;
     }, [currThreadId]);
 
-    // 🔹 SMART AUTO-SCROLL (FIXED 🔥)
+    // 🔹 SMART AUTO-SCROLL
     useEffect(() => {
         if (!prevChats || prevChats.length === 0) return;
 
         if (isFirstLoad.current) {
-            // REFRESH / INITIAL LOAD: Silent Instant Jump to Bottom (Zero Animation)
             if (chatContainerRef.current) {
                 chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
             }
             isFirstLoad.current = false;
         } else {
-            // NEW MESSAGE / TYPING: Smooth Scroll to Bottom
             chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
         }
     }, [prevChats?.length, latestReply]);
@@ -104,9 +141,7 @@ function Chat() {
     const speakMessage = (text) => {
         if (!text) return;
 
-
         setIsPaused(false);
-
         window.speechSynthesis.cancel();
         clearInterval(timerRef.current);
 
@@ -131,9 +166,6 @@ function Chat() {
             }
         }, 1000);
 
-        setIsPaused(false);
-
-
         const speech = new SpeechSynthesisUtterance(text);
         speech.lang = "en-US";
         speech.rate = 1;
@@ -156,21 +188,15 @@ function Chat() {
         if (isPaused) {
             window.speechSynthesis.resume();
             timerRef.current = setInterval(() => {
-
                 setCurrentTimeBar((prev) => {
-
                     if (prev >= totalTime) {
                         clearInterval(timerRef.current);
                         return prev;
                     }
-
                     return prev + 1;
                 });
-
             }, 1000);
-
             setIsPaused(false);
-
         } else {
             window.speechSynthesis.pause();
             clearInterval(timerRef.current);
@@ -181,7 +207,6 @@ function Chat() {
     const formatTime = (time) => {
         const minutes = Math.floor(time / 60);
         const seconds = time % 60;
-
         return `${minutes}:${String(seconds).padStart(2, "0")}`;
     }
 
@@ -189,34 +214,69 @@ function Chat() {
         ? (currentTimeBar / totalTime) * 100
         : 0;
 
+    const handleSave = async (idx) => {
+        if (!editText.trim()) return;
 
-    // // 🔹 Save edit
-    // const handleSave = (idx) => {
-    //     const updatedChats = [...prevChats];
-    //     updatedChats[idx].content = editText;
+        const token = localStorage.getItem("token");
 
-    //     setPrevChats(updatedChats);
+        try {
+            const response = await fetch("http://localhost:8080/api/chat/edit", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    threadId: currThreadId,
+                    messageIndex: idx,
+                    newPrompt: editText
+                })
+            });
 
-    //     setEditIndex(null);
-    //     setEditText("");
-    // };
+            const data = await response.json();
 
-    const handleSave = (idx) => {
-        const updatedChats = prevChats.map((chat, i) =>
-            i === idx ? { ...chat, content: editText } : chat
-        );
+            if (response.ok && data.updatedMessages) {
+                setPrevChats(data.updatedMessages);
 
-        setPrevChats(updatedChats);
-        setEditIndex(null);
-        setEditText("");
+                if (setAllThreads) {
+                    setAllThreads((prevThreads) => {
+                        const updatedList = prevThreads.map((t) => {
+                            if (t.threadId === currThreadId) {
+                                return {
+                                    ...t,
+                                    title: idx === 0 ? editText.trim() : t.title,
+                                    updatedAt: new Date().toISOString()
+                                };
+                            }
+                            return t;
+                        });
+
+                        return [...updatedList].sort((a, b) => {
+                            if (a.isPinned && b.isPinned) {
+                                return new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0);
+                            }
+                            if (!a.isPinned && !b.isPinned) {
+                                return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+                            }
+                            return a.isPinned ? -1 : 1;
+                        });
+                    });
+                }
+
+                setEditIndex(null);
+                setEditText("");
+            } else {
+                alert(data.error || "Failed to update message");
+            }
+        } catch (err) {
+            console.error("Edit request failed:", err);
+        }
     };
 
-    // 🔹 Cancel edit
     const handleCancel = () => {
         setEditIndex(null);
         setEditText("");
     };
-
 
     return (
         <>
@@ -226,26 +286,20 @@ function Chat() {
             }
             {
                 selectedChatImage && (
-
                     <div
                         className="imageOverlay"
-
-                        onClick={() =>
-                            setSelectedChatImage(null)
-                        }
+                        onClick={() => setSelectedChatImage(null)}
                     >
-
                         <img
                             src={selectedChatImage}
                             className="bigImage"
+                            alt="selected-chat"
                         />
-
                     </div>
                 )
             }
 
             <div className="chats" ref={chatContainerRef}>
-
                 {
                     speechBar && (
                         <div className="speechBar">
@@ -257,11 +311,8 @@ function Chat() {
                                             : "fa-solid fa-volume-high"
                                     }
                                     onClick={togglePauseResume}
-
                                 ></i>
-                                <span>
-                                    {formatTime(currentTimeBar)}
-                                </span>
+                                <span>{formatTime(currentTimeBar)}</span>
                             </div>
 
                             <div className="progressContainer">
@@ -270,18 +321,11 @@ function Chat() {
                                     className="progressFill"
                                     style={{ width: `${progress}%` }}
                                 ></div>
-
-
                             </div>
                             <i
                                 className="fa-solid fa-xmark closeIcon"
                                 onClick={stopSpeech}
                             ></i>
-
-
-
-
-
                         </div>
                     )
                 }
@@ -295,7 +339,6 @@ function Chat() {
                         >
                             {chat.role === "user" ? (
                                 <>
-                                    {/* 🔹 Edit Mode */}
                                     {
                                         editIndex === idx ? (
                                             <div className="editBox">
@@ -303,61 +346,42 @@ function Chat() {
                                                     value={editText}
                                                     onChange={(e) => setEditText(e.target.value)}
                                                     maxLength={2000}
-
                                                 />
-
                                                 <div className="editActions">
-                                                    <button onClick={() => handleSave(idx)}>
-                                                        Save
-                                                    </button>
-                                                    <button onClick={handleCancel}>
-                                                        Cancel
-                                                    </button>
+                                                    <button onClick={() => handleSave(idx)}>Save</button>
+                                                    <button onClick={handleCancel}>Cancel</button>
                                                 </div>
                                             </div>
                                         ) : (
                                             <>
                                                 {
                                                     chat.attachment && (
-
                                                         chat.attachment?.type?.startsWith("image/") ? (
-
                                                             <img
                                                                 src={getImageUrl(chat.attachment)}
                                                                 alt="chat-image"
                                                                 className="chatImage"
                                                                 onClick={() => setSelectedChatImage(getImageUrl(chat.attachment))}
                                                             />
-
                                                         ) : (
-
                                                             <div className="chatFilePreview">
-
                                                                 <i className="fa-solid fa-file-pdf"></i>
-
                                                                 <div className="chatFileName">
                                                                     {chat.attachment?.fileName}
                                                                 </div>
-
                                                             </div>
                                                         )
                                                     )
                                                 }
                                                 {
                                                     chat.content?.trim() && (
-
-                                                        <p className="userMessage">
-                                                            {chat.content}
-                                                        </p>
-
+                                                        <p className="userMessage">{chat.content}</p>
                                                     )
                                                 }
-
-
-                                            </>)
+                                            </>
+                                        )
                                     }
 
-                                    {/* 🔹 Actions */}
                                     <div className="actions">
                                         <i
                                             className={
@@ -405,24 +429,19 @@ function Chat() {
                 }
 
                 {/* 🔹 Latest reply */}
-
                 {prevChats && prevChats.length > 0 && (
                     <>
                         {latestReply === null ? (
-                            <>{
-                                prevChats[prevChats.length - 1].content && (
-
-
-
-                                    <div className="gptDiv">
-
-                                        <ReactMarkdown rehypePlugins={rehypeHighlight}>
-                                            {prevChats[prevChats.length - 1].content}
-                                        </ReactMarkdown>
-
-                                    </div>
-                                )
-                            }
+                            <>
+                                {
+                                    prevChats[prevChats.length - 1].content && (
+                                        <div className="gptDiv">
+                                            <ReactMarkdown rehypePlugins={rehypeHighlight}>
+                                                {prevChats[prevChats.length - 1].content}
+                                            </ReactMarkdown>
+                                        </div>
+                                    )
+                                }
 
                                 <div className="gptActions">
                                     <i
@@ -464,9 +483,7 @@ function Chat() {
                                                 ? "fa-solid fa-check"
                                                 : "fa-regular fa-copy"
                                         }
-                                        onClick={() =>
-                                            copyMessage(latestReply, "latest")
-                                        }
+                                        onClick={() => copyMessage(latestReply, "latest")}
                                     ></i>
 
                                     <i
@@ -477,8 +494,7 @@ function Chat() {
                             </>
                         )}
                     </>
-                )
-                }
+                )}
 
                 <div ref={chatEndRef}></div>
             </div>

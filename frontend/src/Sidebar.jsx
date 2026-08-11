@@ -7,10 +7,10 @@ import { v4 as uuidv4 } from "uuid";
 const sortThreads = (threads) => {
     return [...threads].sort((a, b) => {
         if (a.isPinned && b.isPinned) {
-            return new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0);
+            return new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0); // 👈 Fixed: b - a
         }
         if (!a.isPinned && !b.isPinned) {
-            return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
+            return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0); //Nayi Date/Latest Upar (Chat apps me yahi chahiye hota hai).
         }
         return a.isPinned ? -1 : 1;
     });
