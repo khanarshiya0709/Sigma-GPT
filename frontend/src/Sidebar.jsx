@@ -3,20 +3,15 @@ import { useContext, useEffect, useState } from "react";
 import { MyContext } from "./MyContext";
 import { v4 as uuidv4 } from "uuid";
 
-// 🔹 Helper function to ensure Pinned threads always stay on top
+// 🔹 Helper function to ensure Pinned threads stay on top
 const sortThreads = (threads) => {
     return [...threads].sort((a, b) => {
-        // 1. Agar dono PINNED hain -> Pehle pinned hua thread top par rahega (#1), naya pinned uske niche (#2)
         if (a.isPinned && b.isPinned) {
-            return new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0); // Ascending
+            return new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0);
         }
-
-        // 2. Agar dono UNPINNED hain -> Latest updated thread pehle aayega
         if (!a.isPinned && !b.isPinned) {
-            return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0); // Descending
+            return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
         }
-
-        // 3. Pinned threads hamesha Unpinned threads ke upar rahenge
         return a.isPinned ? -1 : 1;
     });
 };
@@ -29,7 +24,7 @@ function Sidebar() {
     const [renameThreadId, setRenameThreadId] = useState(null);
     const [renameText, setRenameText] = useState(" ");
 
-    // 🔹 Get All Threads
+    // 🔹 Get All Threads (Sirf page load par chalega, click par re-render/flicker nahi karega)
     useEffect(() => {
         const fetchAllThreads = async () => {
             const token = localStorage.getItem("token");
@@ -44,11 +39,8 @@ function Sidebar() {
 
                 if (res.ok) {
                     const data = await res.json();
-
-                    // Pinned waale pehle, unpinned waale baad me
                     const pinned = data.filter((t) => t.isPinned);
                     const unpinned = data.filter((t) => !t.isPinned);
-
                     setAllThreads([...pinned, ...unpinned]);
                 }
             } catch (err) {
@@ -57,16 +49,16 @@ function Sidebar() {
         };
 
         fetchAllThreads();
-    }, [currThreadId]);
+    }, []); // 👈 Dependency array ko empty [] kar diya!
 
     // 🔹 Create New Chat
     const createNewChat = () => {
+        const newId = uuidv4();
         setNewChat(true);
         setPrompt("");
         setReply(null);
-        setCurrThreadId(uuidv4());
+        setCurrThreadId(newId);
         setPrevChats([]);
-        localStorage.removeItem("threadId");
     };
 
     useEffect(() => {
@@ -75,26 +67,40 @@ function Sidebar() {
         return () => document.removeEventListener("click", handleClickOutside);
     }, []);
 
-    // 🔹 Click Thread
-    const clickThread = async (newThreadId) => {
-        setCurrThreadId(newThreadId);
-        const token = localStorage.getItem("token");
+    // 🔹 Click Thread (FIXED: Clean transition on single click)
+    // 🔹 Click Thread (Smooth Seamless Switch - No Blank Flash)
+    // const clickThread = async (newThreadId) => {
+    //     if (newThreadId === currThreadId) return;
 
-        try {
-            const response = await fetch(`http://localhost:8080/api/thread/${newThreadId}`, {
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                }
-            });
-            const res = await response.json();
-            setPrevChats(Array.isArray(res) ? res : []);
-            setReply(null);
-        } catch (err) {
-            console.log(err);
-        }
+    //     const token = localStorage.getItem("token");
+
+    //     try {
+    //         const response = await fetch(`http://localhost:8080/api/thread/${newThreadId}`, {
+    //             headers: {
+    //                 "Authorization": `Bearer ${token}`
+    //             }
+    //         });
+    //         const res = await response.json();
+
+    //         // 💡 Single Batch Update: Screen ek jhatke me seamless badlegi
+    //         setPrevChats(Array.isArray(res) ? res : []);
+    //         setCurrThreadId(newThreadId);
+    //         setReply(null);
+    //     } catch (err) {
+    //         console.log("Error loading thread:", err);
+    //     }
+    // };
+
+    // 🔹 Click Thread (Purani Thread click hone par newChat false set karo)
+    const clickThread = (newThreadId) => {
+        if (newThreadId === currThreadId) return;
+
+        setReply(null);
+        setNewChat(false); // 💡 Instant! React ko pata chal jayega ki ye new chat nahi hai
+        setCurrThreadId(newThreadId);
     };
 
-    // 🔹 Delete Thread (Preserves exact array order)
+    // 🔹 Delete Thread
     const deleteThread = async (threadId) => {
         const token = localStorage.getItem("token");
 
@@ -107,8 +113,6 @@ function Sidebar() {
             });
 
             if (response.ok) {
-                // 💡 Pehle se jis position par pinned hain unko usi strict order me rakho,
-                // sirf deleted thread ko filter karke hata do.
                 setAllThreads((prev) => prev.filter((t) => t.threadId !== threadId));
 
                 if (threadId === currThreadId) {
@@ -152,7 +156,7 @@ function Sidebar() {
         setRenameText("");
     };
 
-    // 🔹 Pin / Unpin Function (Exact Position Order)
+    // 🔹 Pin / Unpin Function
     const handlePin = async (threadId) => {
         const token = localStorage.getItem("token");
         const clickedThread = allThreads.find(
@@ -185,25 +189,16 @@ function Sidebar() {
                 }
             );
 
-            // 🔹 Direct Array Positioning Logic
             setAllThreads((prev) => {
                 if (willBePinned) {
-                    // 1. Pehle se jo pinned hain unko intact rakho (#1 spot safe)
                     const existingPinned = prev.filter((t) => t.isPinned && t.threadId !== threadId);
-
-                    // 2. Is naye thread ko Pinned mark karke Pinned list ke END me add karo (#2, #3 spot)
                     const newlyPinned = { ...clickedThread, isPinned: true };
-
-                    // 3. Baaki unpinned threads
                     const unpinned = prev.filter((t) => !t.isPinned && t.threadId !== threadId);
-
                     return [...existingPinned, newlyPinned, ...unpinned];
                 } else {
-                    // Unpin Case: Pinned list se nikalo aur unpinned me dal do
                     const remainingPinned = prev.filter((t) => t.isPinned && t.threadId !== threadId);
                     const unpinnedTarget = { ...clickedThread, isPinned: false };
                     const remainingUnpinned = prev.filter((t) => !t.isPinned && t.threadId !== threadId);
-
                     return [...remainingPinned, unpinnedTarget, ...remainingUnpinned];
                 }
             });

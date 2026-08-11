@@ -6,7 +6,7 @@ import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
 
 function Chat() {
-    const { newChat, prevChats, reply, setPrevChats, setPrompt, setReply } = useContext(MyContext);
+    const { newChat, prevChats, reply, setPrevChats, setPrompt, setReply, currThreadId } = useContext(MyContext);
 
     const [latestReply, setLatestReply] = useState(null);
     const [copiedIndex, setCopiedIndex] = useState(null);
@@ -23,6 +23,8 @@ function Chat() {
 
     const chatEndRef = useRef(null);
     const timerRef = useRef(null);
+    const chatContainerRef = useRef(null);
+    const isFirstLoad = useRef(true);
 
     const getImageUrl = (attachment) => {
         if (!attachment || !attachment.filePath) return "";
@@ -67,13 +69,28 @@ function Chat() {
         return () => clearInterval(interval);
     }, [prevChats, reply]);
 
-
-    // 🔹 Auto scroll
+    // 🔹 Thread ID Change or Refresh Reset
     useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [prevChats, latestReply]);
+        isFirstLoad.current = true;
+    }, [currThreadId]);
 
-    // 🔹 Copy
+    // 🔹 SMART AUTO-SCROLL (FIXED 🔥)
+    useEffect(() => {
+        if (!prevChats || prevChats.length === 0) return;
+
+        if (isFirstLoad.current) {
+            // REFRESH / INITIAL LOAD: Silent Instant Jump to Bottom (Zero Animation)
+            if (chatContainerRef.current) {
+                chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+            }
+            isFirstLoad.current = false;
+        } else {
+            // NEW MESSAGE / TYPING: Smooth Scroll to Bottom
+            chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+        }
+    }, [prevChats?.length, latestReply]);
+
+    // Copy
     const copyMessage = (text, index) => {
         navigator.clipboard.writeText(text);
         setCopiedIndex(index);
@@ -227,7 +244,7 @@ function Chat() {
                 )
             }
 
-            <div className="chats">
+            <div className="chats" ref={chatContainerRef}>
 
                 {
                     speechBar && (

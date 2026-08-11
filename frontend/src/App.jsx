@@ -62,31 +62,81 @@ function App() {
   });
 
   const [reply, setReply] = useState(null);
-  const [currThreadId, setCurrThreadId] = useState(uuidv4());
+  const [currThreadId, setCurrThreadId] = useState(() => {
+    return localStorage.getItem("currThreadId") || uuidv4();
+  });
   const [prevChats, setPrevChats] = useState([]);
-  const [newChat, setNewChat] = useState(true);
-  const [allThreads, setAllThreads] = useState([]);
+  // Agar pehle se localStorage me currThreadId hai, toh iska matlab user purani thread par tha (newChat = false)
+  const [newChat, setNewChat] = useState(() => {
+    return !localStorage.getItem("currThreadId");
+  }); const [allThreads, setAllThreads] = useState([]);
 
-  // 1. Jab Naya User Login ya Signup Kare -> Clears Memory & Creates Fresh Thread
+  // 🔹 Keep localStorage synced with current thread ID
+  useEffect(() => {
+    if (currThreadId) {
+      localStorage.setItem("currThreadId", currThreadId);
+    }
+  }, [currThreadId]);
+
+  // 🔹 Auto-fetch current thread messages on Page Reload
+  useEffect(() => {
+    const fetchCurrentThreadOnReload = async () => {
+      const activeToken = localStorage.getItem("token");
+      const activeThreadId = localStorage.getItem("currThreadId");
+
+      if (!activeToken || !activeThreadId) return;
+
+      try {
+        const response = await fetch(`http://localhost:8080/api/thread/${activeThreadId}`, {
+          headers: {
+            "Authorization": `Bearer ${activeToken}`
+          }
+        });
+        const res = await response.json();
+
+        if (Array.isArray(res) && res.length > 0) {
+          setPrevChats(res);
+          setNewChat(false);
+        } else {
+          setPrevChats([]);
+        }
+      } catch (err) {
+        console.error("Failed to load active thread on reload:", err);
+      }
+    };
+
+    if (token) {
+      fetchCurrentThreadOnReload();
+    }
+  }, [token]);
+
+  // 🔹 Handle User Login/Signup
   const handleLoginSuccess = () => {
     const freshToken = localStorage.getItem("token");
     setToken(freshToken);
 
-    // 🔥 Clean React Memory for New User
+    const newId = uuidv4();
+
+    // Clean React Memory for New User
     setPrevChats([]);
     setAllThreads([]);
-    setCurrThreadId(uuidv4());
+    setCurrThreadId(newId);
+    localStorage.setItem("currThreadId", newId);
     setNewChat(true);
   };
 
-  // 2. Global Logout Handler -> Clear LocalStorage & State
+  // 🔹 Handle Global Logout
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    localStorage.removeItem("currThreadId");
+    sessionStorage.clear();
+
     setToken(null);
     setPrevChats([]);
     setAllThreads([]);
-    setCurrThreadId(uuidv4());
+    const freshId = uuidv4();
+    setCurrThreadId(freshId);
   };
 
   const providerValues = {
@@ -96,7 +146,7 @@ function App() {
     prevChats, setPrevChats,
     newChat, setNewChat,
     allThreads, setAllThreads,
-    handleLogout // 👈 Logout Handler Passed to Context
+    handleLogout
   };
 
   return (
