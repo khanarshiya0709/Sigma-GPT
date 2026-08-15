@@ -167,7 +167,7 @@ router.patch("/thread/:threadId", authMiddleware, async (req, res) => {
 //     }
 // });
 
-// ✅ 5. Edit Prompt & Regenerate Gemini Response (With Thread Title Sync 🔥)
+// ✅ 5. Edit Prompt & Regenerate Gemini Response (With Smart AI Title Regeneration 🔥)
 router.post("/chat/edit", authMiddleware, async (req, res) => {
     try {
         const { threadId, messageIndex, newPrompt } = req.body;
@@ -188,9 +188,9 @@ router.post("/chat/edit", authMiddleware, async (req, res) => {
             return res.status(400).json({ error: "Invalid message index" });
         }
 
-        // 1. Memory Extraction & Gemini AI Call
+        // 1. Memory Extraction & Main Gemini AI Call
         await saveMemory(newPrompt);
-        const memories = await Memory.find();
+        const memories = await Memory.find(userId);
         const globalMemory = memories.map((m) => m.content);
         const converstionHistory = thread.messages.slice(0, idx).map((chat) => chat.content).join("\n");
         const finalPrompt = `${globalMemory.join("\n")} ${converstionHistory} user: ${newPrompt}`;
@@ -210,14 +210,26 @@ router.post("/chat/edit", authMiddleware, async (req, res) => {
             updatedMessages[idx + 1] = { role: "assistant", content: newAiResponse };
         }
 
-        // 💡 3. Build Update Object (Agar index 0 edit hua toh Title bhi badlo)
+        // 3. Build Update Object
         const updateData = {
             messages: updatedMessages,
             updatedAt: new Date()
         };
 
+        // 🚀 SMART TITLE RE-GENERATION (Agar Pehla Message Edit Hua Ho):
         if (idx === 0 && newPrompt.trim()) {
-            updateData.title = newPrompt.trim();
+            try {
+                const titlePrompt = `Summarize this user message into a short, concise chat title (maximum 3 to 4 words, plain text only, no quotes, no markdown, no punctuation): "${newPrompt}"`;
+                const aiTitle = await getGeminiAPIResponse(titlePrompt);
+
+                if (aiTitle) {
+                    updateData.title = aiTitle.trim().replace(/^["']|["']$/g, '').replace(/\n/g, '');
+                } else {
+                    updateData.title = createShortTitle(newPrompt);
+                }
+            } catch (titleErr) {
+                updateData.title = createShortTitle(newPrompt);
+            }
         }
 
         // 4. Atomic Database Update
@@ -230,7 +242,7 @@ router.post("/chat/edit", authMiddleware, async (req, res) => {
         res.json({
             success: true,
             updatedMessages: updatedThread.messages,
-            updatedThread: updatedThread // 👈 Frontend sidebar update ke liye full updated thread
+            updatedThread: updatedThread // 👈 Naye Title ke sath updated thread return ho raha hai
         });
 
     } catch (error) {
@@ -239,10 +251,9 @@ router.post("/chat/edit", authMiddleware, async (req, res) => {
     }
 });
 
-// ✅ 5. Chat route (Already Working)
+// ✅ Main Chat Route (/chat)
 router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => {
-    const userId = req.user.userId || req.user.id;
-
+    const userId = req.user?.userId || req.user?.id || req.user?._id;
     let { threadId, message } = req.body;
 
     if (!message?.trim() && !req.file) {
@@ -260,15 +271,33 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
     try {
         let thread = await Thread.findOne({ threadId, userId });
 
+        // 🚀 NAYA THREAD: Pehle Gemini se Smart Short Title Generate karwao
         if (!thread) {
+            let generatedTitle = "New Chat";
+
+            if (message?.trim()) {
+                try {
+                    const titlePrompt = `Summarize this user message into a short, concise chat title (maximum 3 to 4 words, plain text only, no quotes, no markdown, no punctuation): "${message}"`;
+                    const aiTitle = await getGeminiAPIResponse(titlePrompt);
+
+                    if (aiTitle) {
+                        // Quotes, newlines aur extra space saaf karo
+                        generatedTitle = aiTitle.trim().replace(/^["']|["']$/g, '').replace(/\n/g, '');
+                    } else {
+                        generatedTitle = createShortTitle(message);
+                    }
+                } catch (titleErr) {
+                    console.log("Title Generation Failed, using fallback:", titleErr);
+                    generatedTitle = createShortTitle(message);
+                }
+            } else if (req.file) {
+                generatedTitle = req.file.originalname.split(".")[0];
+            }
+
             thread = new Thread({
                 threadId,
                 userId,
-                title: message.trim()
-                    ? message
-                    : req.file
-                        ? req.file.originalname.split(".")[0]
-                        : "New Chat",
+                title: generatedTitle,
                 messages: [{
                     role: "user",
                     content: message,
@@ -280,6 +309,7 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
                 }]
             });
         } else {
+            // Existing thread me message push karo
             thread.messages.push({
                 role: "user",
                 content: message,
@@ -293,11 +323,10 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
 
         const memories = await Memory.find();
         const globalMemory = memories.map((memory) => memory.content);
-
         const converstionHistory = thread.messages.slice(-20).map((chat) => chat.content).join("\n");
         const finalPrompt = `${globalMemory.join("\n")} ${converstionHistory} user: ${message}`;
 
-        await saveMemory(message);
+        await saveMemory(message, userId);
         const assistantReply = await getGeminiAPIResponse(finalPrompt, req.file?.path, req.file?.mimetype);
 
         thread.messages.push({
@@ -306,13 +335,12 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
         });
 
         thread.updatedAt = new Date();
-
         await thread.save();
 
         res.json({
             reply: assistantReply,
             threadId,
-            thread: thread,
+            thread: thread, // 👈 Backend se dynamic title wali full thread return ho rahi hai
             attachment: req.file ? {
                 fileName: req.file.originalname,
                 type: req.file.mimetype,

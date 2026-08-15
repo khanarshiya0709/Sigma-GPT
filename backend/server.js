@@ -5,6 +5,7 @@ import cors from "cors";
 import mongoose from 'mongoose';
 import chatRoutes from "./routes/chat.js";
 import authRoutes from "./routes/auth.js"
+import Memory from "./models/Memory.js";
 
 const app = express();
 
@@ -27,6 +28,8 @@ const connectDB = async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URI);
         console.log("✅ connected with database!");
+        await Memory.deleteMany({});
+        console.log("Memories collection cleaned!");
 
         app.listen(PORT, () => {
             console.log(`🚀 server running on ${PORT}`);
