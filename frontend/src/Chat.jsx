@@ -575,24 +575,27 @@ function Chat() {
         return () => clearInterval(interval);
     }, [prevChats, reply]);
 
-    // 🔹 Thread ID Change or Refresh Reset
-    useEffect(() => {
-        isFirstLoad.current = true;
-    }, [currThreadId]);
+    // // 🔹 Thread ID Change or Refresh Reset
+    // useEffect(() => {
+    //     isFirstLoad.current = true;
+    // }, [currThreadId]);
 
-    // 🔹 SMART AUTO-SCROLL
+
+    // 🔹 AUTO-SCROLL (Refresh par bilkul nahi chalega, sirf new reply aane par scroll hoga)
     useEffect(() => {
         if (!prevChats || prevChats.length === 0) return;
 
+        // 1. Agar page refresh hua hai ya thread change hua hai, toh kuch mat karo (no autoscroll)
         if (isFirstLoad.current) {
-            if (chatContainerRef.current) {
-                chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
-            }
             isFirstLoad.current = false;
-        } else {
+            return;
+        }
+
+        // 2. Sirf tabhi scroll hoga jab naya message/reply generate ho raha ho
+        if (latestReply) {
             chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
         }
-    }, [prevChats?.length, latestReply]);
+    }, [latestReply]);
 
     // Copy
     const copyMessage = (text, index) => {

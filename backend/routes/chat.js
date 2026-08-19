@@ -9,6 +9,13 @@ import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 
+// 🚀 Helper: Fallback Title (Taaki ReferenceError kabhi na aaye)
+const createShortTitle = (message) => {
+    if (!message) return "New Chat";
+    const words = message.trim().split(/\s+/);
+    return words.slice(0, 4).join(" ") + (words.length > 4 ? "..." : "");
+};
+
 // ✅ Test route
 router.post("/test", async (req, res) => {
     try {
@@ -26,8 +33,7 @@ router.post("/test", async (req, res) => {
     }
 });
 
-
-// ✅ 1. Get ALL threads (FIXED: Sirf Logged-in User ki threads aayengi)
+// ✅ 1. Get ALL threads
 router.get("/thread", authMiddleware, async (req, res) => {
     try {
         const userId = req.user.userId || req.user.id;
@@ -40,7 +46,7 @@ router.get("/thread", authMiddleware, async (req, res) => {
     }
 });
 
-// ✅ 2. Get specific thread (FIXED: Sirf apni thread access kar sake)
+// ✅ 2. Get specific thread
 router.get("/thread/:threadId", authMiddleware, async (req, res) => {
     const { threadId } = req.params;
     const userId = req.user.userId || req.user.id;
@@ -49,7 +55,6 @@ router.get("/thread/:threadId", authMiddleware, async (req, res) => {
         const thread = await Thread.findOne({ threadId, userId });
 
         if (!thread) {
-            // New thread ke case me 404 de kar screen blank hone ke bajaye empty messages array do
             return res.status(200).json([]);
         }
 
@@ -61,7 +66,7 @@ router.get("/thread/:threadId", authMiddleware, async (req, res) => {
     }
 });
 
-// ✅ 3. Delete thread (FIXED: Sirf apni thread delete kar sake)
+// ✅ 3. Delete thread
 router.delete("/thread/:threadId", authMiddleware, async (req, res) => {
     const { threadId } = req.params;
     const userId = req.user.userId || req.user.id;
@@ -81,7 +86,7 @@ router.delete("/thread/:threadId", authMiddleware, async (req, res) => {
     }
 });
 
-// ✅ 4. Update thread title (FIXED)
+// ✅ 4. Update thread title
 router.patch("/thread/:threadId", authMiddleware, async (req, res) => {
     const { threadId } = req.params;
     const userId = req.user.userId || req.user.id;
@@ -100,74 +105,7 @@ router.patch("/thread/:threadId", authMiddleware, async (req, res) => {
     }
 });
 
-
-
-// // ✅ 5. Edit Prompt & Regenerate Gemini Response (ReferenceError & VersionError Fixed)
-// router.post("/chat/edit", authMiddleware, async (req, res) => {
-//     try {
-//         const { threadId, messageIndex, newPrompt } = req.body;
-//         const userId = req.user?._id || req.user?.id || req.user?.userId;
-//         const idx = Number(messageIndex);
-
-//         if (!userId) {
-//             return res.status(401).json({ error: "Unauthorized user" });
-//         }
-
-//         // 1. Thread check karo
-//         const thread = await Thread.findOne({ threadId, userId });
-//         if (!thread) {
-//             return res.status(404).json({ error: "Thread not found" });
-//         }
-
-//         if (isNaN(idx) || !thread.messages[idx]) {
-//             return res.status(400).json({ error: "Invalid message index" });
-//         }
-
-//         // 2. Memory Extraction & Gemini AI Call
-//         await saveMemory(newPrompt);
-//         const memories = await Memory.find();
-//         const globalMemory = memories.map((m) => m.content);
-//         const converstionHistory = thread.messages.slice(0, idx).map((chat) => chat.content).join("\n");
-//         const finalPrompt = `${globalMemory.join("\n")} ${converstionHistory} user: ${newPrompt}`;
-
-//         const newAiResponse = await getGeminiAPIResponse(finalPrompt);
-
-//         // 3. Updated Messages Array Define Karo (Clean mapping)
-//         const updatedMessages = thread.messages.map((item) => {
-//             return item.toObject ? item.toObject() : item;
-//         });
-
-//         // User prompt update
-//         updatedMessages[idx].content = newPrompt;
-
-//         // Assistant reply update
-//         if (updatedMessages[idx + 1] && updatedMessages[idx + 1].role === "assistant") {
-//             updatedMessages[idx + 1].content = newAiResponse;
-//         } else {
-//             updatedMessages[idx + 1] = { role: "assistant", content: newAiResponse };
-//         }
-
-//         // 4. Direct Atomic Update in MongoDB
-//         const updatedThread = await Thread.findOneAndUpdate(
-//             { threadId, userId },
-//             {
-//                 $set: {
-//                     messages: updatedMessages,
-//                     updatedAt: new Date()
-//                 }
-//             },
-//             { new: true }
-//         );
-
-//         res.json({ success: true, updatedMessages: updatedThread.messages });
-
-//     } catch (error) {
-//         console.error("Edit and Regenerate Error:", error);
-//         res.status(500).json({ error: "Failed to regenerate response" });
-//     }
-// });
-
-// ✅ 5. Edit Prompt & Regenerate Gemini Response (With Smart AI Title Regeneration 🔥)
+// ✅ 5. Edit Prompt & Regenerate Gemini Response
 router.post("/chat/edit", authMiddleware, async (req, res) => {
     try {
         const { threadId, messageIndex, newPrompt } = req.body;
@@ -188,9 +126,9 @@ router.post("/chat/edit", authMiddleware, async (req, res) => {
             return res.status(400).json({ error: "Invalid message index" });
         }
 
-        // 1. Memory Extraction & Main Gemini AI Call
-        await saveMemory(newPrompt);
-        const memories = await Memory.find(userId);
+        // 1. Memory Extraction & Gemini Call
+        await saveMemory(newPrompt, userId); // 👈 Fixed: userId pass kiya
+        const memories = await Memory.find({ userId }); // 👈 Fixed: { userId } object pass kiya
         const globalMemory = memories.map((m) => m.content);
         const converstionHistory = thread.messages.slice(0, idx).map((chat) => chat.content).join("\n");
         const finalPrompt = `${globalMemory.join("\n")} ${converstionHistory} user: ${newPrompt}`;
@@ -216,7 +154,7 @@ router.post("/chat/edit", authMiddleware, async (req, res) => {
             updatedAt: new Date()
         };
 
-        // 🚀 SMART TITLE RE-GENERATION (Agar Pehla Message Edit Hua Ho):
+        // 🚀 SMART TITLE RE-GENERATION (Agar Pehla Message Edit Hua Ho)
         if (idx === 0 && newPrompt.trim()) {
             try {
                 const titlePrompt = `Summarize this user message into a short, concise chat title (maximum 3 to 4 words, plain text only, no quotes, no markdown, no punctuation): "${newPrompt}"`;
@@ -242,7 +180,7 @@ router.post("/chat/edit", authMiddleware, async (req, res) => {
         res.json({
             success: true,
             updatedMessages: updatedThread.messages,
-            updatedThread: updatedThread // 👈 Naye Title ke sath updated thread return ho raha hai
+            updatedThread: updatedThread
         });
 
     } catch (error) {
@@ -271,7 +209,7 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
     try {
         let thread = await Thread.findOne({ threadId, userId });
 
-        // 🚀 NAYA THREAD: Pehle Gemini se Smart Short Title Generate karwao
+        // 🚀 NAYA THREAD: Title Generate Karo
         if (!thread) {
             let generatedTitle = "New Chat";
 
@@ -281,7 +219,6 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
                     const aiTitle = await getGeminiAPIResponse(titlePrompt);
 
                     if (aiTitle) {
-                        // Quotes, newlines aur extra space saaf karo
                         generatedTitle = aiTitle.trim().replace(/^["']|["']$/g, '').replace(/\n/g, '');
                     } else {
                         generatedTitle = createShortTitle(message);
@@ -309,7 +246,6 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
                 }]
             });
         } else {
-            // Existing thread me message push karo
             thread.messages.push({
                 role: "user",
                 content: message,
@@ -321,12 +257,13 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
             });
         }
 
-        const memories = await Memory.find();
+        // Memory save aur fetch
+        await saveMemory(message, userId);
+        const memories = await Memory.find({ userId });
         const globalMemory = memories.map((memory) => memory.content);
         const converstionHistory = thread.messages.slice(-20).map((chat) => chat.content).join("\n");
         const finalPrompt = `${globalMemory.join("\n")} ${converstionHistory} user: ${message}`;
 
-        await saveMemory(message, userId);
         const assistantReply = await getGeminiAPIResponse(finalPrompt, req.file?.path, req.file?.mimetype);
 
         thread.messages.push({
@@ -340,7 +277,7 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
         res.json({
             reply: assistantReply,
             threadId,
-            thread: thread, // 👈 Backend se dynamic title wali full thread return ho rahi hai
+            thread: thread,
             attachment: req.file ? {
                 fileName: req.file.originalname,
                 type: req.file.mimetype,

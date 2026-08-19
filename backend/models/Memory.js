@@ -1,18 +1,27 @@
 import mongoose from "mongoose";
 
-const memorySchema = new mongoose.Schema({
-    content: {
-        type: String,
-        required: true
+const memorySchema = new mongoose.Schema(
+    {
+        userId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true
+        },
+        type: {
+            type: String,
+            required: true
+        },
+        content: {
+            type: String,
+            required: true
+        }
+    },
+    {
+        timestamps: true
     }
-}, {
-    timestamps: true
-});
-
-export default mongoose.model(
-    "Memory",
-    memorySchema
 );
 
-//this file store specific fact related to you;
-//what details should the ai remember about the user it store;
+// 🚀 Make sure mongoose.model create karke export default ho
+const Memory = mongoose.model("Memory", memorySchema);
+
+export default Memory;
