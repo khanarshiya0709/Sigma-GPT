@@ -7,88 +7,133 @@
     justify-content: space-between;
     align-items: center;
     text-align: center;
+    position: relative;
+    overflow: hidden;
 }
 
-/* nabar */
+/* 🔹 Navbar */
 .navbar {
     width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 0 1rem;
+    box-sizing: border-box;
 }
 
-.navbar span {
-    margin: 1rem 2rem;
+.navbarLeft {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 1rem 0 1rem 1rem;
+}
+
+.navbarLeft span {
+    margin: 0 !important;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Sidebar Toggle Hamburger (Mobile only) */
+.sidebarToggleBtn {
+    display: none;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: 0.2s ease;
+}
+
+.sidebarToggleBtn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
 .userIconDiv {
-    margin: 1rem 2rem;
+    margin: 1rem 1rem 1rem 0;
 }
 
 .userIcon {
     background-color: aqua;
-    height: 25px;
-    width: 25px;
+    height: 28px;
+    width: 28px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    color: #171717;
+    font-size: 13px;
+    transition: transform 0.2s ease;
 }
 
-/* chat input */
+.userIcon:hover {
+    transform: scale(1.05);
+}
+
+/* 🔹 Chat Input */
 .chatInput {
     width: 100%;
     display: flex;
-    justify-content: center;
-    display: flex;
     flex-direction: column;
     align-items: center;
+    padding-bottom: 10px;
+    box-sizing: border-box;
 }
 
 .inputBox {
-    width: 100%;
+    width: 90%;
     position: relative;
     max-width: 700px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-
 }
 
 input {
     width: 100%;
     border: none;
     background-color: rgba(255, 255, 255, 0.05);
-    padding: 20px;
-    font-size: 0.8rem;
+    color: #fff;
+    padding: 18px;
+    font-size: 0.9rem;
     border-radius: 14px;
-    padding-left: 60px;
+    padding-left: 55px;
+    padding-right: 50px;
+    box-sizing: border-box;
     box-shadow: rgba(0, 0, 0, 0.05) 0 54px 55px,
         rgba(0, 0, 0, 0.05) 0 -12px 30px,
         rgba(0, 0, 0, 0.05) 0 4px 6px,
         rgba(0, 0, 0, 0.05) 0 12px 3px,
-        rgba(0, 0, 0, 0.05) 0 -3px 5px,
-
+        rgba(0, 0, 0, 0.05) 0 -3px 5px;
 }
 
 input:focus {
     outline: none;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 #submit {
     cursor: pointer;
     height: 35px;
     width: 35px;
-    font-size: 20px;
+    font-size: 18px;
     position: absolute;
-    right: 15px;
+    right: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
+    color: #b4b4b4;
 }
 
-#submit i:hover {
+#submit:hover i {
     color: #fff;
 }
 
@@ -96,137 +141,136 @@ input:focus {
     cursor: pointer;
     height: 35px;
     width: 35px;
-    font-size: 20px;
+    font-size: 18px;
     position: absolute;
     display: flex;
     align-items: center;
     justify-content: center;
-    left: 15px;
-
+    left: 12px;
+    color: #b4b4b4;
 }
 
 #plusBtn:hover {
     background-color: rgba(255, 255, 255, 0.08);
     border-radius: 50%;
-
+    color: #fff;
 }
 
-
-
 .info {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     padding: 0.5rem;
     color: #b4b4b4;
 }
 
-/* dropdown css */
+/* 🔹 Dropdown CSS */
 .dropDown {
     position: absolute;
-    top: 4rem;
-    right: 4rem;
-    width: 150px;
+    top: 4.5rem;
+    right: 2rem;
+    width: 160px;
     background-color: #323232;
-    padding: 0.8rem 0.4rem;
-    border-radius: 15px;
+    padding: 0.6rem 0.4rem;
+    border-radius: 14px;
     text-align: left;
     z-index: 1000;
-    box-shadow: 0px 2px 8px rgba(215, 215, 215, 0.8)
+    box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .dropDownItem {
-    font-size: 0.9rem;
-    margin: 0.3rem 0rem;
-    padding: 0.4rem 0.2rem;
+    font-size: 0.85rem;
+    margin: 0.2rem 0;
+    padding: 0.5rem 0.6rem;
     cursor: pointer;
+    color: #e5e7eb;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 6px;
+    transition: background 0.15s ease;
 }
 
 .dropDownItem:hover {
-    background-color: rgba(180, 180, 180, 0.1);
-    border-radius: 6px;
+    background-color: rgba(180, 180, 180, 0.15);
 }
 
+/* 🔹 Upload Menu */
 .uploadMenu {
-
     position: absolute;
-
     bottom: 60px;
     left: 0;
     background-color: #2a2a2a;
     border: 1px solid #444;
     border-radius: 14px;
-    padding: 8px;
-    width: 180px;
+    padding: 6px;
+    width: 170px;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
     z-index: 1000;
-
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
 }
 
 .uploadMenu button {
     border: none;
     background: transparent;
     color: white;
-    padding: 10px;
-    border-radius: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 10px;
-    font-size: 14px;
-
-
+    font-size: 13px;
+    text-align: left;
 }
 
 .uploadMenu button:hover {
     background-color: rgba(255, 255, 255, 0.08);
 }
 
+/* 🔹 File Preview Container */
 .fileContainer {
     position: absolute;
     bottom: 60px;
     left: 0;
     display: flex;
-    justify-content: space-between;
-    /* width: 100%; */
+    align-items: center;
     border: 1px solid #444;
     border-radius: 14px;
     background-color: #2a2a2a;
-    padding: 14px;
-
+    padding: 10px 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .filePreview {
     display: flex;
-    gap: 6px;
+    gap: 8px;
     align-items: center;
-    padding-right: 30px;
-
+    padding-right: 24px;
 }
 
 .fileName {
-    width: 140px;
+    max-width: 140px;
     overflow-x: auto;
     scrollbar-width: none;
     border: 1px solid #444;
-
     border-radius: 8px;
-
-    padding: 6px 8px;
-
+    padding: 4px 8px;
     background-color: rgba(255, 255, 255, 0.06);
     white-space: nowrap;
+    font-size: 12px;
+    color: #fff;
 }
 
 .fileName::-webkit-scrollbar {
-
     display: none;
 }
 
 .fa-file {
-    font-size: 20px;
+    font-size: 18px;
+    color: aqua;
 }
-
 
 .removeFile {
     position: absolute;
@@ -235,47 +279,163 @@ input:focus {
     cursor: pointer;
     border-radius: 50%;
     transition: background-color 0.2s ease;
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     justify-content: center;
     align-items: center;
     display: flex;
-
-
+    font-size: 11px;
+    color: #fff;
 }
 
 .removeFile:hover {
-
-    background-color: rgba(255, 255, 255, 0.12);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
+/* 🔹 Image Preview Container */
 .imageContainer {
     position: absolute;
     bottom: 60px;
     left: 0;
-
 }
 
 .selectedImage {
-    width: 70px;
-    height: 70px;
-    border-radius: 14px;
+    width: 65px;
+    height: 65px;
+    border-radius: 12px;
     object-fit: cover;
-
+    border: 1px solid #444;
 }
 
 .removeImage {
     position: absolute;
-    top: 5px;
-    right: 5px;
+    top: 4px;
+    right: 4px;
     cursor: pointer;
     border-radius: 50%;
     transition: background-color 0.2s ease;
-    padding: 2px;
-
+    padding: 3px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 10px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .removeImage:hover {
-    background-color: rgba(255, 255, 255, 0.12);
+    background-color: rgba(239, 68, 68, 0.8);
+}
 
+/* 📱 Responsive Breakpoint */
+@media (max-width: 768px) {
+    .sidebarToggleBtn {
+        display: block;
+    }
+
+    .navbarLeft {
+        margin: 0.8rem 0;
+    }
+
+    .userIconDiv {
+        margin: 0.8rem 0;
+    }
+
+    .dropDown {
+        right: 1rem;
+        top: 3.8rem;
+    }
+
+    .inputBox {
+        width: 95%;
+    }
+
+    input {
+        padding: 14px;
+        padding-left: 48px;
+        padding-right: 44px;
+        font-size: 0.85rem;
+    }
+}
+
+/* 🔹 2. SigmaGPT Brand Title (Glowing Gradient Text) */
+.navbarLeft span {
+    font-size: 1.15rem;
+    font-weight: 700;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    filter: drop-shadow(0 0 10px var(--accent-glow));
+}
+
+.navbarLeft span i {
+    -webkit-text-fill-color: initial;
+    color: var(--primary-accent);
+    font-size: 0.85rem;
+}
+
+/* 🔹 1. Enter Submit Button (Perfect Circle with Theme Glow) */
+#submit {
+    cursor: pointer;
+    height: 36px;
+    width: 36px;
+    border-radius: 50%;
+    /* 👈 Perfect Circle */
+    position: absolute;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-gradient);
+    color: #ffffff;
+    box-shadow: 0 0 14px var(--accent-glow);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
+}
+
+#submit i {
+    font-size: 14px;
+    transform: translateX(1px);
+}
+
+#submit:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* 🔹 Ethereal Seamless Horizontal Bottom Aura */
+.chatInput {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 16px;
+    box-sizing: border-box;
+    position: relative;
+
+    /* 🌟 Smooth Horizontal Beam (No Circular Spot) */
+    background:
+        linear-gradient(to top, var(--accent-subtle) 0%, transparent 100%),
+        linear-gradient(to top, #171717 65%, transparent);
+}
+
+/* 🔹 Subtle Glow Line at the Bottom Edge */
+.chatInput::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 10%;
+    right: 10%;
+    height: 1.5px;
+    background: var(--accent-gradient);
+    opacity: 0.6;
+    filter: blur(1.5px);
+    box-shadow: 0 0 16px var(--accent-glow);
+    pointer-events: none;
 }

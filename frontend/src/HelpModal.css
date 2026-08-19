@@ -1,0 +1,197 @@
+/* 🔹 Overlay with Smooth Backdrop Blur */
+.helpModalOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 16px;
+    animation: fadeInModal 0.2s ease-out;
+}
+
+@keyframes fadeInModal {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* 🔹 Glassmorphic Modal Card */
+.helpModalCard {
+    background: rgba(26, 29, 36, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 520px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: scaleUpModal 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scaleUpModal {
+    from {
+        opacity: 0;
+        transform: scale(0.92) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* Header */
+.helpModalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.helpHeaderTitle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.helpHeaderTitle h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #f1f5f9;
+    font-weight: 600;
+}
+
+.helpIconGlow {
+    color: #38bdf8;
+    font-size: 1.1rem;
+}
+
+.helpCloseBtn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.helpCloseBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+/* Content */
+.helpModalContent {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    text-align: left;
+}
+
+.helpHero h4 {
+    margin: 0 0 6px 0;
+    font-size: 1rem;
+    color: #f8fafc;
+}
+
+.helpHero p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+.helpCardsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.helpInfoCard {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    transition: background 0.2s ease;
+}
+
+.helpInfoCard:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.cardIcon {
+    color: #10a37f;
+    font-size: 16px;
+    margin-top: 2px;
+}
+
+.cardText strong {
+    display: block;
+    font-size: 0.85rem;
+    color: #f1f5f9;
+    margin-bottom: 3px;
+}
+
+.cardText p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    line-height: 1.35;
+}
+
+.cardText code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #38bdf8;
+}
+
+/* Footer */
+.helpModalFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    background: rgba(20, 22, 28, 0.6);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.helpModalFooter span {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.helpGotItBtn {
+    background: #10a37f;
+    border: none;
+    color: #ffffff;
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.helpGotItBtn:hover {
+    opacity: 0.9;
+}

@@ -14,3 +14,83 @@ body {
     background-color: #212121;
     display: flex;
 }
+
+/* 🔹 Base Variables */
+:root {
+    --primary-accent: #10a37f;
+    --accent-glow: rgba(16, 163, 127, 0.35);
+    --accent-gradient: linear-gradient(135deg, #10a37f, #38bdf8);
+    --accent-subtle: rgba(16, 163, 127, 0.12);
+}
+
+/* 🎨 1. Solid / Plain Palettes */
+[data-theme="cyber-blue"] {
+    --primary-accent: #00d2ff;
+    --accent-glow: rgba(0, 210, 255, 0.4);
+    --accent-gradient: linear-gradient(135deg, #00d2ff, #3a7bd5);
+    --accent-subtle: rgba(0, 210, 255, 0.12);
+}
+
+[data-theme="emerald-luxe"] {
+    --primary-accent: #10b981;
+    --accent-glow: rgba(16, 185, 129, 0.4);
+    --accent-gradient: linear-gradient(135deg, #10b981, #047857);
+    --accent-subtle: rgba(16, 185, 129, 0.12);
+}
+
+[data-theme="crimson-neon"] {
+    --primary-accent: #ff2a5f;
+    --accent-glow: rgba(255, 42, 95, 0.4);
+    --accent-gradient: linear-gradient(135deg, #ff2a5f, #ff6584);
+    --accent-subtle: rgba(255, 42, 95, 0.12);
+}
+
+[data-theme="electric-violet"] {
+    --primary-accent: #8b5cf6;
+    --accent-glow: rgba(139, 92, 246, 0.4);
+    --accent-gradient: linear-gradient(135deg, #8b5cf6, #6366f1);
+    --accent-subtle: rgba(139, 92, 246, 0.12);
+}
+
+[data-theme="sunset-orange"] {
+    --primary-accent: #ff7849;
+    --accent-glow: rgba(255, 120, 73, 0.4);
+    --accent-gradient: linear-gradient(135deg, #ff7849, #ff4b4b);
+    --accent-subtle: rgba(255, 120, 73, 0.12);
+}
+
+/* ✨ 2. Ethereal Glitter & Shimmer Themes */
+[data-theme="cosmic-glitter"] {
+    --primary-accent: #d946ef;
+    --accent-glow: rgba(217, 70, 239, 0.45);
+    --accent-gradient: linear-gradient(135deg, #c084fc, #f472b6, #fb7185);
+    --accent-subtle: rgba(217, 70, 239, 0.14);
+}
+
+[data-theme="golden-luxury"] {
+    --primary-accent: #fbbf24;
+    --accent-glow: rgba(251, 191, 36, 0.45);
+    --accent-gradient: linear-gradient(135deg, #ffe066, #f59e0b, #d97706);
+    --accent-subtle: rgba(251, 191, 36, 0.14);
+}
+
+[data-theme="aurora-borealis"] {
+    --primary-accent: #2dd4bf;
+    --accent-glow: rgba(45, 212, 191, 0.45);
+    --accent-gradient: linear-gradient(135deg, #2dd4bf, #38bdf8, #a855f7);
+    --accent-subtle: rgba(45, 212, 191, 0.14);
+}
+
+[data-theme="starlight-silver"] {
+    --primary-accent: #e2e8f0;
+    --accent-glow: rgba(226, 232, 240, 0.35);
+    --accent-gradient: linear-gradient(135deg, #ffffff, #94a3b8, #cbd5e1);
+    --accent-subtle: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="ruby-sparkle"] {
+    --primary-accent: #f43f5e;
+    --accent-glow: rgba(244, 63, 94, 0.45);
+    --accent-gradient: linear-gradient(135deg, #fb7185, #e11d48, #881337);
+    --accent-subtle: rgba(244, 63, 94, 0.14);
+}

@@ -7,24 +7,36 @@ import { v4 as uuidv4 } from "uuid";
 const sortThreads = (threads) => {
     return [...threads].sort((a, b) => {
         if (a.isPinned && b.isPinned) {
-            return new Date(a.updatedAt || 0) - new Date(b.updatedAt || 0); // 👈 Fixed: b - a
+            return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
         }
         if (!a.isPinned && !b.isPinned) {
-            return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0); //Nayi Date/Latest Upar (Chat apps me yahi chahiye hota hai).
+            return new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0);
         }
         return a.isPinned ? -1 : 1;
     });
 };
 
 function Sidebar() {
-    const { allThreads, setAllThreads, currThreadId, setReply, setPrompt, setNewChat, setCurrThreadId, setPrevChats } = useContext(MyContext);
+    const {
+        allThreads,
+        setAllThreads,
+        currThreadId,
+        setReply,
+        setPrompt,
+        setNewChat,
+        setCurrThreadId,
+        setPrevChats,
+        isMobileSidebarOpen,      // 👈 Context se mobile state
+        setIsMobileSidebarOpen   // 👈 Context se toggle function
+    } = useContext(MyContext);
+
     const [openMenu, setOpenMenu] = useState(null);
     const [menuPosition, setMenuPosition] = useState("bottom");
     const [deleteThreadId, setDeleteThreadId] = useState(null);
     const [renameThreadId, setRenameThreadId] = useState(null);
     const [renameText, setRenameText] = useState(" ");
 
-    // 🔹 Get All Threads (Sirf page load par chalega, click par re-render/flicker nahi karega)
+    // 🔹 Get All Threads
     useEffect(() => {
         const fetchAllThreads = async () => {
             const token = localStorage.getItem("token");
@@ -49,7 +61,7 @@ function Sidebar() {
         };
 
         fetchAllThreads();
-    }, []); // 👈 Dependency array ko empty [] kar diya!
+    }, []);
 
     // 🔹 Create New Chat
     const createNewChat = () => {
@@ -59,6 +71,7 @@ function Sidebar() {
         setReply(null);
         setCurrThreadId(newId);
         setPrevChats([]);
+        if (setIsMobileSidebarOpen) setIsMobileSidebarOpen(false); // Mobile pe auto close
     };
 
     useEffect(() => {
@@ -67,37 +80,14 @@ function Sidebar() {
         return () => document.removeEventListener("click", handleClickOutside);
     }, []);
 
-    // 🔹 Click Thread (FIXED: Clean transition on single click)
-    // 🔹 Click Thread (Smooth Seamless Switch - No Blank Flash)
-    // const clickThread = async (newThreadId) => {
-    //     if (newThreadId === currThreadId) return;
-
-    //     const token = localStorage.getItem("token");
-
-    //     try {
-    //         const response = await fetch(`http://localhost:8080/api/thread/${newThreadId}`, {
-    //             headers: {
-    //                 "Authorization": `Bearer ${token}`
-    //             }
-    //         });
-    //         const res = await response.json();
-
-    //         // 💡 Single Batch Update: Screen ek jhatke me seamless badlegi
-    //         setPrevChats(Array.isArray(res) ? res : []);
-    //         setCurrThreadId(newThreadId);
-    //         setReply(null);
-    //     } catch (err) {
-    //         console.log("Error loading thread:", err);
-    //     }
-    // };
-
-    // 🔹 Click Thread (Purani Thread click hone par newChat false set karo)
+    // 🔹 Click Thread
     const clickThread = (newThreadId) => {
         if (newThreadId === currThreadId) return;
 
         setReply(null);
-        setNewChat(false); // 💡 Instant! React ko pata chal jayega ki ye new chat nahi hai
+        setNewChat(false);
         setCurrThreadId(newThreadId);
+        if (setIsMobileSidebarOpen) setIsMobileSidebarOpen(false); // 👈 Thread select hone par mobile me band ho jaye
     };
 
     // 🔹 Delete Thread
@@ -208,18 +198,29 @@ function Sidebar() {
     };
 
     return (
-        <section className="sidebar">
-            {/* New Chat Button */}
-            <button onClick={createNewChat} className="button">
-                <img
-                    src="src/assets/blacklogo.png"
-                    alt="gpt logo"
-                    className="logo"
-                />
-                <span>
-                    <i className="fa-solid fa-pen-to-square"></i>
-                </span>
-            </button>
+        <section className={`sidebar ${isMobileSidebarOpen ? "openMobile" : ""}`}>
+            {/* 🔹 Top Header Bar with New Chat & Close Cross Icon */}
+            <div className="sidebarHeader">
+                <button onClick={createNewChat} className="button newChatBtn">
+                    <img
+                        src="src/assets/blacklogo.png"
+                        alt="gpt logo"
+                        className="logo"
+                    />
+                    <span>
+                        <i className="fa-solid fa-pen-to-square"></i>
+                    </span>
+                </button>
+
+                {/* ❌ Cross Icon to Close Sidebar */}
+                <button
+                    className="sidebarCloseCross"
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                    title="Close sidebar"
+                >
+                    <i className="fa-solid fa-xmark"></i>
+                </button>
+            </div>
 
             {/* History */}
             <ul className="history">
@@ -249,8 +250,8 @@ function Sidebar() {
                                     />
                                 ) : (
                                     <>
-                                        {thread.title}
-                                        {thread.isPinned && <i className="fa-solid fa-thumbtack"></i>}
+                                        <span className="threadTitleText">{thread.title}</span>
+                                        {thread.isPinned && <i className="fa-solid fa-thumbtack pinBadgeIcon"></i>}
                                     </>
                                 )
                             }
@@ -270,7 +271,7 @@ function Sidebar() {
                                     }}
                                 ></i>
 
-                                {
+                                {/* {
                                     openMenu === thread.threadId && (
                                         <div
                                             className={`threadMenu ${menuPosition}`}
@@ -312,6 +313,54 @@ function Sidebar() {
                                             </button>
                                         </div>
                                     )
+                                } */}
+
+                                {
+                                    openMenu === thread.threadId && (
+                                        <div
+                                            className={`threadMenu ${menuPosition}`}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <button
+                                                className="menuActionBtn renameBtn"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setRenameThreadId(thread.threadId);
+                                                    setRenameText(thread.title);
+                                                    setOpenMenu(null);
+                                                }}
+                                            >
+                                                <i className="fa-solid fa-pencil"></i>
+                                                <span>Rename</span>
+                                            </button>
+
+                                            <button
+                                                className="menuActionBtn pinBtn"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handlePin(thread.threadId);
+                                                    setOpenMenu(null);
+                                                }}
+                                            >
+                                                <i className={thread.isPinned ? "fa-solid fa-thumbtack-slash" : "fa-solid fa-thumbtack"}></i>
+                                                <span>{thread.isPinned ? "Unpin" : "Pin"}</span>
+                                            </button>
+
+                                            <div className="menuDivider"></div>
+
+                                            <button
+                                                className="menuActionBtn deleteBtn"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setDeleteThreadId(thread.threadId);
+                                                    setOpenMenu(null);
+                                                }}
+                                            >
+                                                <i className="fa-solid fa-trash"></i>
+                                                <span>Delete</span>
+                                            </button>
+                                        </div>
+                                    )
                                 }
                             </div>
                         </li>
@@ -341,8 +390,42 @@ function Sidebar() {
                 )
             }
 
-            <div className="sign">
+            {/* <div className="sign">
                 <p> By Me &hearts; </p>
+            </div> */}
+
+            {/* 🔹 Bottom User Profile & Logout Bar */}
+            <div className="sidebarUserSection">
+                <div className="userInfo">
+                    <div className="userAvatar">
+                        {localStorage.getItem("user")
+                            ? JSON.parse(localStorage.getItem("user")).email?.[0]?.toUpperCase() || "U"
+                            : <i className="fa-solid fa-user"></i>}
+                    </div>
+                    <div className="userDetails">
+                        <span className="userName">
+                            {localStorage.getItem("user")
+                                ? (JSON.parse(localStorage.getItem("user")).name || JSON.parse(localStorage.getItem("user")).email?.split("@")[0])
+                                : "User"}
+                        </span>
+                        <span className="userPlan">Free Member</span>
+                    </div>
+                </div>
+
+                <button
+                    className="sidebarLogoutBtn"
+                    onClick={() => {
+                        if (window.confirm("Are you sure you want to log out?")) {
+                            localStorage.removeItem("token");
+                            localStorage.removeItem("user");
+                            sessionStorage.clear();
+                            window.location.reload();
+                        }
+                    }}
+                    title="Log out"
+                >
+                    <i className="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
             </div>
         </section>
     );

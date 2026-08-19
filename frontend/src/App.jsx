@@ -55,6 +55,7 @@ import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from "uuid";
 
 function App() {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [token, setToken] = useState(localStorage.getItem("token"));
 
   const [prompt, setPrompt] = useState(() => {
@@ -147,6 +148,7 @@ function App() {
     prevChats, setPrevChats,
     newChat, setNewChat,
     allThreads, setAllThreads,
+    isMobileSidebarOpen, setIsMobileSidebarOpen,
     handleLogout
   };
 
@@ -154,6 +156,13 @@ function App() {
     <div className='app'>
       {token ? (
         <MyContext.Provider value={providerValues}>
+          {/* 🔹 Mobile Screen Dim Overlay (Click karne par sidebar band hoga) */}
+          {isMobileSidebarOpen && (
+            <div
+              className="mobileBackdrop"
+              onClick={() => setIsMobileSidebarOpen(false)}
+            />
+          )}
           <Sidebar />
           <ChatWindow />
         </MyContext.Provider>

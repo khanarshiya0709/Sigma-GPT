@@ -290,6 +290,8 @@ import Chat from "./Chat.jsx";
 import { MyContext } from './MyContext';
 import { useContext, useState, useEffect, useRef } from "react";
 import { SyncLoader } from "react-spinners";
+import HelpModal from "./HelpModal.jsx";
+import SettingsModal from "./SettingsModal.jsx";
 
 function ChatWindow() {
     const {
@@ -301,7 +303,8 @@ function ChatWindow() {
         setPrevChats,
         setCurrThreadId,
         setNewChat,
-        setAllThreads
+        setAllThreads,
+        setIsMobileSidebarOpen
     } = useContext(MyContext);
 
     const [loading, setLoading] = useState(false);
@@ -311,6 +314,23 @@ function ChatWindow() {
     const imageInputRef = useRef(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedImage, setSelectedImage] = useState(null);
+    const [showHelpModal, setShowHelpModal] = useState(false);
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
+    const [currentTheme, setCurrentTheme] = useState(() => {
+        return localStorage.getItem("appTheme") || "default";
+    });
+
+    // Theme update function
+    const handleSelectTheme = (themeId) => {
+        setCurrentTheme(themeId);
+        document.documentElement.setAttribute("data-theme", themeId);
+        localStorage.setItem("appTheme", themeId);
+    };
+
+    // Initial load par theme sync
+    useEffect(() => {
+        document.documentElement.setAttribute("data-theme", currentTheme);
+    }, [currentTheme]);
 
     // 🔹 Send Message & Get AI Reply
     const getReply = async () => {
@@ -496,7 +516,19 @@ function ChatWindow() {
     return (
         <div className="ChatWindow">
             <div className="navbar">
-                <span>SigmaGPT <i className="fa-solid fa-angle-down"></i></span>
+                {/* 🔹 Left Header: Hamburger Toggle + Brand Name */}
+                <div className="navbarLeft">
+                    <button
+                        className="sidebarToggleBtn"
+                        onClick={() => setIsMobileSidebarOpen(true)}
+                        title="Open Sidebar"
+                    >
+                        <i className="fa-solid fa-bars"></i>
+                    </button>
+                    <span>SigmaGPT <i className="fa-solid fa-angle-down"></i></span>
+                </div>
+
+                {/* 🔹 Right Header: User Profile */}
                 <div className="userIconDiv" onClick={handleProfileClick}>
                     <span className="userIcon"><i className="fa-solid fa-user"></i></span>
                 </div>
@@ -504,14 +536,41 @@ function ChatWindow() {
 
             {isOpen && (
                 <div className="dropDown">
-                    <div className="dropDownItem"><i className="fa-solid fa-arrow-up-right-dots"></i>Upgrade plan</div>
-                    <div className="dropDownItem"><i className="fa-solid fa-gear"></i>Settings</div>
-                    <div className="dropDownItem"><i className="fa-solid fa-circle-question"></i>Help</div>
+                    <div className="dropDownItem">
+                        <i className="fa-solid fa-arrow-up-right-dots"></i>Upgrade plan
+                    </div>
+                    <div
+                        className="dropDownItem"
+                        onClick={() => {
+                            setShowSettingsModal(true);
+                            setIsOpen(false);
+                        }}
+                    >
+                        <i className="fa-solid fa-gear"></i>Settings
+                    </div>
+
+                    {/* 🔹 Help click par modal open hoga aur dropdown close */}
+                    <div
+                        className="dropDownItem"
+                        onClick={() => {
+                            setShowHelpModal(true);
+                            setIsOpen(false);
+                        }}
+                    >
+                        <i className="fa-solid fa-circle-question"></i>Help
+                    </div>
+
                     <div className="dropDownItem" onClick={handleLogout}>
                         <i className="fa-solid fa-arrow-right-from-bracket"></i>Log out
                     </div>
                 </div>
             )}
+
+            {/* 🔹 Help Modal Mount */}
+            <HelpModal
+                isOpen={showHelpModal}
+                onClose={() => setShowHelpModal(false)}
+            />
 
             <Chat />
             <SyncLoader color="#fff" loading={loading} />
@@ -603,6 +662,17 @@ function ChatWindow() {
                     SigmaGPT can make mistakes, Check imp info, See Cookie Preferences.
                 </p>
             </div>
+            <HelpModal
+                isOpen={showHelpModal}
+                onClose={() => setShowHelpModal(false)}
+            />
+
+            <SettingsModal
+                isOpen={showSettingsModal}
+                onClose={() => setShowSettingsModal(false)}
+                currentTheme={currentTheme}
+                onSelectTheme={handleSelectTheme}
+            />
         </div>
     );
 }
