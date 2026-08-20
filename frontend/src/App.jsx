@@ -1,58 +1,12 @@
-// import './App.css';
-// import Sidebar from './Sidebar';
-// import ChatWindow from './ChatWindow';
-// import { MyContext } from './MyContext';
-// import { useState } from 'react';
-// import { v4 as uuidv4 } from "uuid";
-
-
-
-// function App() {
-//   console.log("uuid test", uuidv4());
-
-//   const [prompt, setPrompt] = useState(() => {
-//     return localStorage.getItem("draft") || "";
-//   });
-
-//   const [reply, setReply] = useState(null);
-//   const [currThreadId, setCurrThreadId] = useState(null);//(uuidv4());
-//   const [prevChats, setPrevChats] = useState([]); // stores all chats of curr threads
-//   const [newChat, setNewChat] = useState(true);
-//   const [allThreads, setAllThreads] = useState([]);
-
-//   const providerValues = {
-//     prompt, setPrompt,
-//     reply, setReply,
-//     currThreadId, setCurrThreadId,
-//     prevChats, setPrevChats,
-//     newChat, setNewChat,
-//     allThreads, setAllThreads
-
-
-//   };
-
-
-//   return (
-//     <div className='app'>
-//       <MyContext.Provider value={providerValues}>
-//         <Sidebar></Sidebar>
-//         <ChatWindow></ChatWindow>
-//       </MyContext.Provider>
-
-
-//     </div>
-//   )
-// }
-
-// export default App
-
 import './App.css';
 import Sidebar from './Sidebar';
 import ChatWindow from './ChatWindow';
 import Login from './Login';
+import Signup from './Signup'; // 👈 Signup import kiya
 import { MyContext } from './MyContext';
 import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from "uuid";
+import { Routes, Route, Navigate } from "react-router-dom"; // 👈 Router components
 
 function App() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -67,11 +21,10 @@ function App() {
     return localStorage.getItem("currThreadId") || uuidv4();
   });
   const [prevChats, setPrevChats] = useState([]);
-  // Agar pehle se localStorage me currThreadId hai, toh iska matlab user purani thread par tha (newChat = false)
   const [newChat, setNewChat] = useState(() => {
     return !localStorage.getItem("currThreadId");
-
-  }); const [allThreads, setAllThreads] = useState([]);
+  });
+  const [allThreads, setAllThreads] = useState([]);
 
   // 🔹 Keep localStorage synced with current thread ID
   useEffect(() => {
@@ -118,8 +71,6 @@ function App() {
     setToken(freshToken);
 
     const newId = uuidv4();
-
-    // Clean React Memory for New User
     setPrevChats([]);
     setAllThreads([]);
     setCurrThreadId(newId);
@@ -153,23 +104,56 @@ function App() {
   };
 
   return (
-    <div className='app'>
-      {token ? (
-        <MyContext.Provider value={providerValues}>
-          {/* 🔹 Mobile Screen Dim Overlay (Click karne par sidebar band hoga) */}
-          {isMobileSidebarOpen && (
-            <div
-              className="mobileBackdrop"
-              onClick={() => setIsMobileSidebarOpen(false)}
-            />
-          )}
-          <Sidebar />
-          <ChatWindow />
-        </MyContext.Provider>
-      ) : (
-        <Login onLoginSuccess={handleLoginSuccess} />
-      )}
-    </div>
+    <Routes>
+      {/* 🔹 Public Auth Routes */}
+      <Route
+        path="/login"
+        element={
+          !token ? (
+            <Login onLoginSuccess={handleLoginSuccess} />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      <Route
+        path="/signup"
+        element={
+          !token ? (
+            <Signup />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      {/* 🔹 Protected Main Chat App Route */}
+      <Route
+        path="/"
+        element={
+          token ? (
+            <div className="app">
+              <MyContext.Provider value={providerValues}>
+                {isMobileSidebarOpen && (
+                  <div
+                    className="mobileBackdrop"
+                    onClick={() => setIsMobileSidebarOpen(false)}
+                  />
+                )}
+                <Sidebar />
+                <ChatWindow />
+              </MyContext.Provider>
+            </div>
+          ) : (
+            <Navigate to="/login" replace />
+          )
+        }
+      />
+
+      {/* 🔹 Fallback wildcard route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 

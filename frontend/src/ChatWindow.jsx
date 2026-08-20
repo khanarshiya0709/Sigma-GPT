@@ -1,290 +1,3 @@
-// import "./ChatWindow.css";
-// import Chat from "./Chat.jsx";
-// import { MyContext } from './MyContext';
-// import { useContext, useState, useEffect, useRef } from "react";
-// import { SyncLoader } from "react-spinners";
-
-// function ChatWindow() {
-//     const { prompt, setPrompt, reply, setReply, currThreadId, setPrevChats, setCurrThreadId, setNewChat } = useContext(MyContext);
-//     const [loading, setLoading] = useState(false);
-//     const [isOpen, setIsOpen] = useState(false);
-//     const [showUploadMenu, setShowUploadMenu] = useState(false);
-//     const fileInputRef = useRef(null);
-//     const imageInputRef = useRef(null);
-//     const [selectedFile, setSelectedFile] = useState(null);
-//     const [selectedImage, setSelectedImage] = useState(null);
-
-//     // 🔹 Send Message & Get AI Reply
-//     const getReply = async () => {
-//         if (!prompt.trim() && !selectedFile && !selectedImage) {
-//             return;
-//         }
-
-//         setLoading(true);
-//         setNewChat(false);
-
-//         const formData = new FormData();
-//         formData.append("message", prompt);
-//         if (currThreadId) {
-//             formData.append("threadId", currThreadId);
-//         }
-//         if (selectedFile) {
-//             formData.append("file", selectedFile);
-//         }
-//         if (selectedImage) {
-//             formData.append("file", selectedImage);
-//         }
-
-//         const token = localStorage.getItem("token");
-
-//         const options = {
-//             method: "POST",
-//             headers: {
-//                 "Authorization": `Bearer ${token}`
-//             },
-//             body: formData
-//         };
-
-//         try {
-//             const response = await fetch("http://localhost:8080/api/chat", options);
-//             const res = await response.json();
-
-//             setReply(res.reply);
-//             if (res.threadId) {
-//                 setCurrThreadId(res.threadId);  //Triggers instant sidebar update
-//             }
-//         } catch (err) {
-//             console.log("Chat error:", err);
-//         }
-
-//         setLoading(false);
-//     };
-
-//     // 🔹 Append new message pair to prevChats on reply
-//     useEffect(() => {
-//         if ((prompt || selectedFile || selectedImage) && reply) {
-//             const localAttachment = selectedImage ? {
-//                 fileName: selectedImage.name,
-//                 type: selectedImage.type,
-//                 filePath: URL.createObjectURL(selectedImage)
-//             } : selectedFile ? {
-//                 fileName: selectedFile.name,
-//                 type: selectedFile.type,
-//                 filePath: URL.createObjectURL(selectedFile)
-//             } : null;
-
-//             setPrevChats(prev => [
-//                 ...prev,
-//                 {
-//                     role: "user",
-//                     content: prompt,
-//                     attachment: localAttachment
-//                 },
-//                 {
-//                     role: "assistant",
-//                     content: reply
-//                 }
-//             ]);
-//         }
-
-//         setPrompt("");
-//         sessionStorage.removeItem("draft");
-//         setSelectedFile(null);
-//         setSelectedImage(null);
-
-//     }, [reply]);
-
-//     // Reset attachments on thread change
-//     useEffect(() => {
-//         setSelectedFile(null);
-//         setSelectedImage(null);
-//     }, [currThreadId]);
-
-//     const handleProfileClick = () => {
-//         setIsOpen(!isOpen);
-//     };
-
-//     // Draft save & restore logic
-//     useEffect(() => {
-//         if (prompt.trim() === "") {
-//             sessionStorage.removeItem("draft");
-//         } else {
-//             sessionStorage.setItem("draft", prompt);
-//         }
-//     }, [prompt]);
-
-//     useEffect(() => {
-//         const savedDraft = sessionStorage.getItem("draft");
-//         if (savedDraft) {
-//             setPrompt(savedDraft);
-//         }
-//     }, []);
-
-//     // 🔹 Single Place where chats are fetched on Thread Change
-//     // 🔹 ChatWindow.jsx me getChats useEffect:
-//     // 🔹 Single Place where chats are fetched on Thread Change
-//     useEffect(() => {
-//         if (!currThreadId) return;
-
-//         const getChats = async () => {
-//             // 💡 FETCHING SHURU HOTE HI PURANI CHATS SAAF KARO LEKIN NEW CHAT TABHI MANO JAB DATA EMPTY AAYE
-//             const token = localStorage.getItem("token");
-//             if (!token) return;
-
-//             try {
-//                 const response = await fetch(`http://localhost:8080/api/thread/${currThreadId}`, {
-//                     headers: {
-//                         "Authorization": `Bearer ${token}`
-//                     }
-//                 });
-
-//                 if (response.ok) {
-//                     const data = await response.json();
-
-//                     if (Array.isArray(data) && data.length > 0) {
-//                         setPrevChats(data);
-//                         setNewChat(false); // 💡 Thread me data hai -> Strictly false
-//                     } else {
-//                         setPrevChats([]);
-//                         setNewChat(true);  // 💡 Khaali thread hai -> Tabhi true
-//                     }
-//                 } else {
-//                     setPrevChats([]);
-//                     setNewChat(true);
-//                 }
-//             } catch (err) {
-//                 console.log("Error fetching chats:", err);
-//                 setPrevChats([]);
-//                 setNewChat(true);
-//             }
-//         };
-
-//         getChats();
-//     }, [currThreadId]);
-
-//     const handleLogout = () => {
-//         localStorage.removeItem("token");
-//         localStorage.removeItem("user");
-//         sessionStorage.clear();
-//         window.location.reload();
-//     };
-
-//     return (
-//         <div className="ChatWindow">
-//             <div className="navbar">
-//                 <span>SigmaGPT <i className="fa-solid fa-angle-down"></i></span>
-//                 <div className="userIconDiv" onClick={handleProfileClick}>
-//                     <span className="userIcon"><i className="fa-solid fa-user"></i></span>
-//                 </div>
-//             </div>
-
-//             {isOpen && (
-//                 <div className="dropDown">
-//                     <div className="dropDownItem"><i className="fa-solid fa-arrow-up-right-dots"></i>Upgrade plan</div>
-//                     <div className="dropDownItem"><i className="fa-solid fa-gear"></i>Settings</div>
-//                     <div className="dropDownItem"><i className="fa-solid fa-circle-question"></i>Help</div>
-//                     <div className="dropDownItem" onClick={handleLogout}>
-//                         <i className="fa-solid fa-arrow-right-from-bracket"></i>Log out
-//                     </div>
-//                 </div>
-//             )}
-
-//             <Chat />
-//             <SyncLoader color="#fff" loading={loading} />
-
-//             <div className="chatInput">
-//                 <div className="inputBox">
-//                     <div id="plusBtn" onClick={() => setShowUploadMenu(!showUploadMenu)}>
-//                         <i className="fa-solid fa-plus"></i>
-//                     </div>
-
-//                     {(selectedFile || selectedImage) ? (
-//                         <div>
-//                             {selectedImage ? (
-//                                 <div className="imageContainer">
-//                                     <img
-//                                         src={URL.createObjectURL(selectedImage)}
-//                                         alt="preview"
-//                                         className="selectedImage"
-//                                     />
-//                                     <i
-//                                         className="fa-solid fa-xmark removeImage"
-//                                         onClick={() => setSelectedImage(null)}
-//                                     ></i>
-//                                 </div>
-//                             ) : (
-//                                 <div className="fileContainer">
-//                                     <div className="filePreview">
-//                                         <i className="fa-solid fa-file"></i>
-//                                         <span className="fileName">
-//                                             {selectedFile.name}
-//                                         </span>
-//                                     </div>
-//                                     <i
-//                                         className="fa-solid fa-xmark removeFile"
-//                                         onClick={() => setSelectedFile(null)}
-//                                     ></i>
-//                                 </div>
-//                             )}
-//                         </div>
-//                     ) : (
-//                         showUploadMenu && (
-//                             <div className="uploadMenu">
-//                                 <button onClick={() => imageInputRef.current.click()}>
-//                                     <i className="fa-solid fa-images"></i> Choose Image
-//                                     <input
-//                                         type="file"
-//                                         accept="image/*"
-//                                         ref={imageInputRef}
-//                                         style={{ display: "none" }}
-//                                         onChange={(e) => {
-//                                             const image = e.target.files[0];
-//                                             setSelectedImage(image);
-//                                             setShowUploadMenu(false);
-//                                         }}
-//                                     />
-//                                 </button>
-
-//                                 <button onClick={() => fileInputRef.current.click()}>
-//                                     <i className="fa-solid fa-file-arrow-up"></i> Upload File
-//                                     <input
-//                                         type="file"
-//                                         ref={fileInputRef}
-//                                         style={{ display: "none" }}
-//                                         onChange={(e) => {
-//                                             const file = e.target.files[0];
-//                                             setSelectedFile(file);
-//                                             setShowUploadMenu(false);
-//                                         }}
-//                                     />
-//                                 </button>
-//                             </div>
-//                         )
-//                     )}
-
-//                     <input
-//                         placeholder="Ask Anything"
-//                         value={prompt}
-//                         onChange={(e) => setPrompt(e.target.value)}
-//                         onKeyDown={(e) => e.key === 'Enter' ? getReply() : ''}
-//                         maxLength={2000}
-//                     />
-
-//                     <div id="submit" onClick={getReply}>
-//                         <i className="fa-regular fa-paper-plane"></i>
-//                     </div>
-//                 </div>
-
-//                 <p className="info">
-//                     SigmaGPT can make mistakes, Check imp info, See Cookie Preferences.
-//                 </p>
-//             </div>
-//         </div>
-//     );
-// }
-
-// export default ChatWindow;
-
 import "./ChatWindow.css";
 import Chat from "./Chat.jsx";
 import { MyContext } from './MyContext';
@@ -315,19 +28,41 @@ function ChatWindow() {
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedImage, setSelectedImage] = useState(null);
     const [showHelpModal, setShowHelpModal] = useState(false);
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [showSettingsModal, setShowSettingsModal] = useState(false);
+    const dropDownRef = useRef(null);
     const [currentTheme, setCurrentTheme] = useState(() => {
         return localStorage.getItem("appTheme") || "default";
     });
 
-    // Theme update function
+    // 🔹 Click outside listener for dropdown
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (
+                dropDownRef.current &&
+                !dropDownRef.current.contains(event.target)
+            ) {
+                setIsOpen(false);
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener("mousedown", handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [isOpen]);
+
+    // 🔹 Theme update function
     const handleSelectTheme = (themeId) => {
         setCurrentTheme(themeId);
         document.documentElement.setAttribute("data-theme", themeId);
         localStorage.setItem("appTheme", themeId);
     };
 
-    // Initial load par theme sync
+    // 🔹 Initial load par theme sync
     useEffect(() => {
         document.documentElement.setAttribute("data-theme", currentTheme);
     }, [currentTheme]);
@@ -373,7 +108,6 @@ function ChatWindow() {
                 setCurrThreadId(res.threadId);
             }
 
-            // 🚀 Sirf message bhejne par hi Sidebar list sort/update hogi
             if (res.thread && setAllThreads) {
                 setAllThreads((prevThreads) => {
                     const exists = prevThreads.some((t) => t.threadId === res.threadId);
@@ -447,10 +181,6 @@ function ChatWindow() {
         setSelectedImage(null);
     }, [currThreadId]);
 
-    const handleProfileClick = () => {
-        setIsOpen(!isOpen);
-    };
-
     // Draft save & restore logic
     useEffect(() => {
         if (prompt.trim() === "") {
@@ -467,7 +197,7 @@ function ChatWindow() {
         }
     }, []);
 
-    // 🔹 Fetch chats on Thread Change (Sirf message load karega, thread list ki position ko touch nahi karega)
+    // 🔹 Fetch chats on Thread Change
     useEffect(() => {
         if (!currThreadId) return;
 
@@ -515,8 +245,8 @@ function ChatWindow() {
 
     return (
         <div className="ChatWindow">
+            {/* 🔹 Top Navbar */}
             <div className="navbar">
-                {/* 🔹 Left Header: Hamburger Toggle + Brand Name */}
                 <div className="navbarLeft">
                     <button
                         className="sidebarToggleBtn"
@@ -525,56 +255,109 @@ function ChatWindow() {
                     >
                         <i className="fa-solid fa-bars"></i>
                     </button>
-                    <span>SigmaGPT <i className="fa-solid fa-angle-down"></i></span>
+                    <span className="navbarBrand">
+                        SigmaGPT <i className="fa-solid fa-angle-down"></i>
+                    </span>
                 </div>
 
-                {/* 🔹 Right Header: User Profile */}
-                <div className="userIconDiv" onClick={handleProfileClick}>
-                    <span className="userIcon"><i className="fa-solid fa-user"></i></span>
+                {/* 🔹 Single User Profile & Dropdown */}
+                <div className="userProfileWrapper" ref={dropDownRef}>
+                    <div className="userIconDiv" onClick={() => setIsOpen((prev) => !prev)}>
+                        <div className="navbarUserAvatar">
+                            {localStorage.getItem("user")
+                                ? (JSON.parse(localStorage.getItem("user")).email?.[0]?.toUpperCase() || "U")
+                                : <i className="fa-solid fa-user"></i>}
+                        </div>
+                    </div>
+
+                    {isOpen && (
+                        <div className="dropDown">
+                            <div
+                                className="dropDownItem"
+                                onClick={() => {
+                                    setShowSettingsModal(true);
+                                    setIsOpen(false);
+                                }}
+                            >
+                                <i className="fa-solid fa-gear"></i>Settings
+                            </div>
+
+                            <div
+                                className="dropDownItem"
+                                onClick={() => {
+                                    setShowHelpModal(true);
+                                    setIsOpen(false);
+                                }}
+                            >
+                                <i className="fa-solid fa-circle-question"></i>Help
+                            </div>
+
+                            <div
+                                className="dropDownItem"
+                                onClick={() => {
+                                    setShowLogoutModal(true);
+                                    setIsOpen(false);
+                                }}
+                            >
+                                <i className="fa-solid fa-arrow-right-from-bracket"></i>Log out
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {isOpen && (
-                <div className="dropDown">
-                    <div className="dropDownItem">
-                        <i className="fa-solid fa-arrow-up-right-dots"></i>Upgrade plan
-                    </div>
-                    <div
-                        className="dropDownItem"
-                        onClick={() => {
-                            setShowSettingsModal(true);
-                            setIsOpen(false);
-                        }}
-                    >
-                        <i className="fa-solid fa-gear"></i>Settings
-                    </div>
+            {/* 🔹 Logout Confirmation Modal */}
+            {showLogoutModal && (
+                <div className="logoutModalOverlay" onClick={() => setShowLogoutModal(false)}>
+                    <div className="logoutModalCard" onClick={(e) => e.stopPropagation()}>
+                        <div className="logoutModalIcon">
+                            <i className="fa-solid fa-arrow-right-from-bracket"></i>
+                        </div>
 
-                    {/* 🔹 Help click par modal open hoga aur dropdown close */}
-                    <div
-                        className="dropDownItem"
-                        onClick={() => {
-                            setShowHelpModal(true);
-                            setIsOpen(false);
-                        }}
-                    >
-                        <i className="fa-solid fa-circle-question"></i>Help
-                    </div>
+                        <div className="logoutModalText">
+                            <h3>Log out of SigmaGPT?</h3>
+                            <p>Are you sure you want to sign out of your current session?</p>
+                        </div>
 
-                    <div className="dropDownItem" onClick={handleLogout}>
-                        <i className="fa-solid fa-arrow-right-from-bracket"></i>Log out
+                        <div className="logoutModalActions">
+                            <button
+                                className="cancelLogoutBtn"
+                                onClick={() => setShowLogoutModal(false)}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="confirmLogoutBtn"
+                                onClick={() => {
+                                    setShowLogoutModal(false);
+                                    handleLogout();
+                                }}
+                            >
+                                Log out
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* 🔹 Help Modal Mount */}
+            {/* 🔹 Modals */}
             <HelpModal
                 isOpen={showHelpModal}
                 onClose={() => setShowHelpModal(false)}
             />
 
+            <SettingsModal
+                isOpen={showSettingsModal}
+                onClose={() => setShowSettingsModal(false)}
+                currentTheme={currentTheme}
+                onSelectTheme={handleSelectTheme}
+            />
+
+            {/* 🔹 Chat Body */}
             <Chat />
             <SyncLoader color="#fff" loading={loading} />
 
+            {/* 🔹 Chat Input & Multimodal Bar */}
             <div className="chatInput">
                 <div className="inputBox">
                     <div id="plusBtn" onClick={() => setShowUploadMenu(!showUploadMenu)}>
@@ -613,7 +396,13 @@ function ChatWindow() {
                     ) : (
                         showUploadMenu && (
                             <div className="uploadMenu">
-                                <button onClick={() => imageInputRef.current.click()}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        imageInputRef.current.click();
+                                        setShowUploadMenu(false);
+                                    }}
+                                >
                                     <i className="fa-solid fa-images"></i> Choose Image
                                     <input
                                         type="file"
@@ -623,12 +412,17 @@ function ChatWindow() {
                                         onChange={(e) => {
                                             const image = e.target.files[0];
                                             setSelectedImage(image);
-                                            setShowUploadMenu(false);
                                         }}
                                     />
                                 </button>
 
-                                <button onClick={() => fileInputRef.current.click()}>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        fileInputRef.current.click();
+                                        setShowUploadMenu(false);
+                                    }}
+                                >
                                     <i className="fa-solid fa-file-arrow-up"></i> Upload File
                                     <input
                                         type="file"
@@ -637,7 +431,6 @@ function ChatWindow() {
                                         onChange={(e) => {
                                             const file = e.target.files[0];
                                             setSelectedFile(file);
-                                            setShowUploadMenu(false);
                                         }}
                                     />
                                 </button>
@@ -646,10 +439,10 @@ function ChatWindow() {
                     )}
 
                     <input
-                        placeholder="Ask Anything"
+                        placeholder="Ask Anything..."
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' ? getReply() : ''}
+                        onKeyDown={(e) => (e.key === 'Enter' ? getReply() : '')}
                         maxLength={2000}
                     />
 
@@ -662,17 +455,6 @@ function ChatWindow() {
                     SigmaGPT can make mistakes, Check imp info, See Cookie Preferences.
                 </p>
             </div>
-            <HelpModal
-                isOpen={showHelpModal}
-                onClose={() => setShowHelpModal(false)}
-            />
-
-            <SettingsModal
-                isOpen={showSettingsModal}
-                onClose={() => setShowSettingsModal(false)}
-                currentTheme={currentTheme}
-                onSelectTheme={handleSelectTheme}
-            />
         </div>
     );
 }

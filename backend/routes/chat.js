@@ -9,7 +9,7 @@ import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 
-// 🚀 Helper: Fallback Title (Taaki ReferenceError kabhi na aaye)
+// 🚀 Helper: Fallback Title
 const createShortTitle = (message) => {
     if (!message) return "New Chat";
     const words = message.trim().split(/\s+/);
@@ -36,7 +36,7 @@ router.post("/test", async (req, res) => {
 // ✅ 1. Get ALL threads
 router.get("/thread", authMiddleware, async (req, res) => {
     try {
-        const userId = req.user.userId || req.user.id;
+        const userId = req.user.userId || req.user.id || req.user._id;
         const threads = await Thread.find({ userId }).sort({ isPinned: -1, updatedAt: -1 });
         res.json(threads);
 
@@ -49,7 +49,7 @@ router.get("/thread", authMiddleware, async (req, res) => {
 // ✅ 2. Get specific thread
 router.get("/thread/:threadId", authMiddleware, async (req, res) => {
     const { threadId } = req.params;
-    const userId = req.user.userId || req.user.id;
+    const userId = req.user.userId || req.user.id || req.user._id;
 
     try {
         const thread = await Thread.findOne({ threadId, userId });
@@ -69,7 +69,7 @@ router.get("/thread/:threadId", authMiddleware, async (req, res) => {
 // ✅ 3. Delete thread
 router.delete("/thread/:threadId", authMiddleware, async (req, res) => {
     const { threadId } = req.params;
-    const userId = req.user.userId || req.user.id;
+    const userId = req.user.userId || req.user.id || req.user._id;
 
     try {
         const deletedThread = await Thread.findOneAndDelete({ threadId, userId });
@@ -86,16 +86,16 @@ router.delete("/thread/:threadId", authMiddleware, async (req, res) => {
     }
 });
 
-// ✅ 4. Update thread title
+// ✅ 4. Update thread title / pin
 router.patch("/thread/:threadId", authMiddleware, async (req, res) => {
     const { threadId } = req.params;
-    const userId = req.user.userId || req.user.id;
+    const userId = req.user.userId || req.user.id || req.user._id;
 
     try {
         const updatedThread = await Thread.findOneAndUpdate(
             { threadId, userId },
             req.body,
-            { new: true }
+            { returnDocument: 'after' }
         );
         res.json(updatedThread);
 
@@ -127,8 +127,8 @@ router.post("/chat/edit", authMiddleware, async (req, res) => {
         }
 
         // 1. Memory Extraction & Gemini Call
-        await saveMemory(newPrompt, userId); // 👈 Fixed: userId pass kiya
-        const memories = await Memory.find({ userId }); // 👈 Fixed: { userId } object pass kiya
+        await saveMemory(newPrompt, userId);
+        const memories = await Memory.find({ userId });
         const globalMemory = memories.map((m) => m.content);
         const converstionHistory = thread.messages.slice(0, idx).map((chat) => chat.content).join("\n");
         const finalPrompt = `${globalMemory.join("\n")} ${converstionHistory} user: ${newPrompt}`;
@@ -154,7 +154,7 @@ router.post("/chat/edit", authMiddleware, async (req, res) => {
             updatedAt: new Date()
         };
 
-        // 🚀 SMART TITLE RE-GENERATION (Agar Pehla Message Edit Hua Ho)
+        // SMART TITLE RE-GENERATION (Agar Pehla Message Edit Hua Ho)
         if (idx === 0 && newPrompt.trim()) {
             try {
                 const titlePrompt = `Summarize this user message into a short, concise chat title (maximum 3 to 4 words, plain text only, no quotes, no markdown, no punctuation): "${newPrompt}"`;
@@ -174,7 +174,7 @@ router.post("/chat/edit", authMiddleware, async (req, res) => {
         const updatedThread = await Thread.findOneAndUpdate(
             { threadId, userId },
             { $set: updateData },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         res.json({
@@ -189,7 +189,7 @@ router.post("/chat/edit", authMiddleware, async (req, res) => {
     }
 });
 
-// ✅ Main Chat Route (/chat)
+// ✅ Main Chat Route (/chat) - Duplicate ID & Collision Proof
 router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => {
     const userId = req.user?.userId || req.user?.id || req.user?._id;
     let { threadId, message } = req.body;
@@ -198,18 +198,29 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
         return res.status(400).json({ error: "missing message" });
     }
 
-    if (message.length > 2000) {
+    if (message && message.length > 2000) {
         return res.status(400).json({ error: "Character limit exceeded" });
     }
 
-    if (!threadId) {
-        threadId = uuidv4();
-    }
-
     try {
-        let thread = await Thread.findOne({ threadId, userId });
+        let thread = null;
 
-        // 🚀 NAYA THREAD: Title Generate Karo
+        // 1. Check karo agar ID ke sath thread pehle se exist karti hai
+        if (threadId) {
+            thread = await Thread.findOne({ threadId, userId });
+
+            // ⚠️ Agar threadId database me kisi aur ke paas hai ya crash ho sakti hai, toh naya ID assign kar do
+            if (!thread) {
+                const existingAnyThread = await Thread.findOne({ threadId });
+                if (existingAnyThread) {
+                    threadId = uuidv4();
+                }
+            }
+        } else {
+            threadId = uuidv4();
+        }
+
+        // 2. Nayi Thread Create ya Existing me Append
         if (!thread) {
             let generatedTitle = "New Chat";
 
@@ -237,7 +248,7 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
                 title: generatedTitle,
                 messages: [{
                     role: "user",
-                    content: message,
+                    content: message || "",
                     attachment: req.file ? {
                         type: req.file.mimetype,
                         fileName: req.file.originalname,
@@ -248,7 +259,7 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
         } else {
             thread.messages.push({
                 role: "user",
-                content: message,
+                content: message || "",
                 attachment: req.file ? {
                     type: req.file.mimetype,
                     fileName: req.file.originalname,
@@ -257,13 +268,14 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
             });
         }
 
-        // Memory save aur fetch
+        // 3. Memory save aur fetch
         await saveMemory(message, userId);
         const memories = await Memory.find({ userId });
         const globalMemory = memories.map((memory) => memory.content);
         const converstionHistory = thread.messages.slice(-20).map((chat) => chat.content).join("\n");
         const finalPrompt = `${globalMemory.join("\n")} ${converstionHistory} user: ${message}`;
 
+        // 4. Gemini AI Call
         const assistantReply = await getGeminiAPIResponse(finalPrompt, req.file?.path, req.file?.mimetype);
 
         thread.messages.push({
@@ -276,7 +288,7 @@ router.post("/chat", authMiddleware, upload.single("file"), async (req, res) => 
 
         res.json({
             reply: assistantReply,
-            threadId,
+            threadId: thread.threadId,
             thread: thread,
             attachment: req.file ? {
                 fileName: req.file.originalname,
