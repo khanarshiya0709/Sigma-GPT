@@ -20,6 +20,17 @@ function ChatWindow() {
         setIsMobileSidebarOpen
     } = useContext(MyContext);
 
+    // Logged in user ka email nikaal lo
+    const currentUserEmail = () => {
+        try {
+            const u = JSON.parse(localStorage.getItem("user"));
+            return u?.email || "guest";
+        } catch {
+            return "guest";
+        }
+    };
+
+
     const [loading, setLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
     const [showUploadMenu, setShowUploadMenu] = useState(false);
@@ -32,8 +43,12 @@ function ChatWindow() {
     const [showSettingsModal, setShowSettingsModal] = useState(false);
     const dropDownRef = useRef(null);
     const [currentTheme, setCurrentTheme] = useState(() => {
-        return localStorage.getItem("appTheme") || "default";
+        const userKey = `appTheme_${currentUserEmail()}`;
+        return localStorage.getItem(userKey) || "default";
     });
+
+
+
 
     // 🔹 Click outside listener for dropdown
     useEffect(() => {
@@ -59,13 +74,21 @@ function ChatWindow() {
     const handleSelectTheme = (themeId) => {
         setCurrentTheme(themeId);
         document.documentElement.setAttribute("data-theme", themeId);
-        localStorage.setItem("appTheme", themeId);
+        localStorage.setItem(`appTheme_${currentUserEmail()}`, themeId);
     };
+
+    useEffect(() => {
+        const userTheme = localStorage.getItem(`appTheme_${currentUserEmail()}`) || "default";
+        setCurrentTheme(userTheme);
+        document.documentElement.setAttribute("data-Theme", userTheme);
+    }, currThreadId)
 
     // 🔹 Initial load par theme sync
     useEffect(() => {
         document.documentElement.setAttribute("data-theme", currentTheme);
     }, [currentTheme]);
+
+
 
     // 🔹 Send Message & Get AI Reply
     const getReply = async () => {
@@ -364,6 +387,30 @@ function ChatWindow() {
                         <i className="fa-solid fa-plus"></i>
                     </div>
 
+                    {/* 🔹 Hidden Persistent File Inputs */}
+                    <input
+                        type="file"
+                        accept="image/*"
+                        ref={imageInputRef}
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                            const image = e.target.files[0];
+                            if (image) setSelectedImage(image);
+                            e.target.value = null;
+                        }}
+                    />
+
+                    <input
+                        type="file"
+                        ref={fileInputRef}
+                        style={{ display: "none" }}
+                        onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) setSelectedFile(file);
+                            e.target.value = null;
+                        }}
+                    />
+
                     {(selectedFile || selectedImage) ? (
                         <div>
                             {selectedImage ? (
@@ -404,16 +451,6 @@ function ChatWindow() {
                                     }}
                                 >
                                     <i className="fa-solid fa-images"></i> Choose Image
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        ref={imageInputRef}
-                                        style={{ display: "none" }}
-                                        onChange={(e) => {
-                                            const image = e.target.files[0];
-                                            setSelectedImage(image);
-                                        }}
-                                    />
                                 </button>
 
                                 <button
@@ -424,15 +461,6 @@ function ChatWindow() {
                                     }}
                                 >
                                     <i className="fa-solid fa-file-arrow-up"></i> Upload File
-                                    <input
-                                        type="file"
-                                        ref={fileInputRef}
-                                        style={{ display: "none" }}
-                                        onChange={(e) => {
-                                            const file = e.target.files[0];
-                                            setSelectedFile(file);
-                                        }}
-                                    />
                                 </button>
                             </div>
                         )
